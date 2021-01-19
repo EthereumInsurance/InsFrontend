@@ -33,6 +33,7 @@
     "husky": "^4.2.5"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.3.0"
+    "@openzeppelin/contracts": "^3.3.0",
+    "fs-extra": "^9.1.0"
   }
 }

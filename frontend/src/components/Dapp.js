@@ -1,13 +1,13 @@
 // TODO: update React to useState, etc.
 import React from "react";
-
-// We'll use ethers to interact with the Ethereum network and our contract
 import { ethers } from "ethers";
 
-// We import the contract's artifacts and address here, as we are going to be
-// using them with ethers
 import TokenArtifact from "../contracts/Token.json";
 import tokenAddress from "../contracts/Token-address.json";
+import InsuranceArtifact from "../contracts/Insurance.json";
+import insuranceAddress from "../contracts/Insurance-address.json";
+import StakeArtifact from "../contracts/Stake.json";
+import stakeAddress from "../contracts/Stake-address.json";
 
 // All the logic of this dapp is contained in the Dapp component.
 // These other components are just presentational ones: they don't have any
@@ -234,6 +234,18 @@ export class Dapp extends React.Component {
     this._token = new ethers.Contract(
       tokenAddress.Token,
       TokenArtifact.abi,
+      this._provider.getSigner(0)
+    );
+
+    this._insurance = new ethers.Contract(
+      insuranceAddress.Insurance,
+      InsuranceArtifact.abi,
+      this._provider.getSigner(0)
+    );
+
+    this._stake = new ethers.Contract(
+      stakeAddress.Stake,
+      StakeArtifact.abi,
       this._provider.getSigner(0)
     );
   }

@@ -1,5 +1,8 @@
 // This is a script for deploying your contracts. You can adapt it to deploy
 // yours, or create new ones.
+
+const fs = require("fs-extra");
+
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -32,6 +35,9 @@ async function main() {
 
   console.log(`contracts object is ${contracts}`);
 
+  await updateContractsFolder().then(console.log("InsFronted contract folder updated"));
+  await updateArtifactsFolder().then(console.log("InsFronted artifacts folder updated"));
+
   for (const name of Object.keys(contracts)) {
 
     const args = contracts[name];
@@ -41,13 +47,12 @@ async function main() {
 
     console.log(`${name} address:`, deployedContract.address);
     // We also save the contract's artifacts and address in the frontend directory
-    saveFrontendFiles(name, deployedContract);
+    saveFileOnFrontend(name, deployedContract);
   };
 
 }
 
-function saveFrontendFiles(name, contract) {
-  const fs = require("fs");
+function saveFileOnFrontend(name, contract) {
   const contractsDir = __dirname + "/../frontend/src/contracts";
 
   if (!fs.existsSync(contractsDir)) {
@@ -66,6 +71,32 @@ function saveFrontendFiles(name, contract) {
     contractsDir + `/${name}.json`,
     JSON.stringify(ContractArtifact, null, 2)
   );
+}
+
+async function updateContractsFolder() {
+
+  const contractSource = __dirname + "/../../EthInsurance/contracts";
+  const contractDestination = __dirname + "/../contracts";
+
+  if (!fs.existsSync(contractDestination)) {
+    fs.mkdirSync(contractDestination);
+  }
+
+  await fs.copy(contractSource, contractDestination).then(console.log("contract files copied"));
+
+}
+
+async function updateArtifactsFolder() {
+
+  const artifactSource = __dirname + "/../../EthInsurance/artifacts";
+  const artifactDestination = __dirname + "/../artifacts";
+
+  if (!fs.existsSync(artifactDestination)) {
+    fs.mkdirSync(artifactDestination);
+  }
+
+  await fs.copy(artifactSource, artifactDestination).then(console.log("artifact files copied"));
+
 }
 
 main()
