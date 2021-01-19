@@ -19,17 +19,34 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Token = await ethers.getContractFactory("Token");
-  const token = await Token.deploy();
-  await token.deployed();
+  // these are the two arguments that Insurance contract takes
+  daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+  uniAddress = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 
-  console.log("Token address:", token.address);
+  // need to enter manually for now
+  var contracts = {
+    "Token": [],
+    "Insurance": [daiAddress, uniAddress],
+    "Stake": []
+  };
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(token);
+  console.log(`contracts object is ${contracts}`);
+
+  for (const name of Object.keys(contracts)) {
+
+    const args = contracts[name];
+    const Contract = await ethers.getContractFactory(name);
+    const deployedContract = await Contract.deploy(...args);
+    await deployedContract.deployed();
+
+    console.log(`${name} address:`, deployedContract.address);
+    // We also save the contract's artifacts and address in the frontend directory
+    saveFrontendFiles(name, deployedContract);
+  };
+
 }
 
-function saveFrontendFiles(token) {
+function saveFrontendFiles(name, contract) {
   const fs = require("fs");
   const contractsDir = __dirname + "/../frontend/src/contracts";
 
@@ -39,15 +56,15 @@ function saveFrontendFiles(token) {
 
 // The 2 adds 2 spaces
   fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify({ Token: token.address }, undefined, 2)
+    contractsDir + `/${name}-address.json`,
+    JSON.stringify({ [name]: contract.address }, undefined, 2)
   );
 
-  const TokenArtifact = artifacts.readArtifactSync("Token");
+  const ContractArtifact = artifacts.readArtifactSync(`${name}`);
 
   fs.writeFileSync(
-    contractsDir + "/Token.json",
-    JSON.stringify(TokenArtifact, null, 2)
+    contractsDir + `/${name}.json`,
+    JSON.stringify(ContractArtifact, null, 2)
   );
 }
 
