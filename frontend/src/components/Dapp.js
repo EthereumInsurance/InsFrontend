@@ -4,10 +4,8 @@ import { ethers } from "ethers";
 
 import TokenArtifact from "../contracts/Token.json";
 import tokenAddress from "../contracts/Token-address.json";
-import InsuranceArtifact from "../contracts/Insurance.json";
-import insuranceAddress from "../contracts/Insurance-address.json";
-import StakeArtifact from "../contracts/Stake.json";
-import stakeAddress from "../contracts/Stake-address.json";
+import StakeTestArtifact from "../contracts/StakeTest.json";
+import stakeTestAddress from "../contracts/StakeTest-address.json";
 
 // All the logic of this dapp is contained in the Dapp component.
 // These other components are just presentational ones: they don't have any
@@ -19,6 +17,7 @@ import { Transfer } from "./Transfer";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
+import { StakeTest } from "./StakeTest";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -54,6 +53,7 @@ export class Dapp extends React.Component {
       txBeingSent: undefined,
       transactionError: undefined,
       networkError: undefined,
+      stakeData: undefined,
     };
 
     this.state = this.initialState;
@@ -85,7 +85,7 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    if (!this.state.tokenData || !this.state.balance) {
+    if (!this.state.tokenData || !this.state.balance || !this.state.stakeData) {
       return <Loading />;
     }
 
@@ -97,6 +97,14 @@ export class Dapp extends React.Component {
             <h1>
               {this.state.tokenData.name} ({this.state.tokenData.symbol})
             </h1>
+            <h3>
+              User Stake: {this.state.stakeData.userInitialStake.toString()}
+            </h3>
+            <StakeTest
+              stakeFunds={(amount) =>
+                this._stakeFunds(amount)
+              }
+            />
             <p>
               Welcome <b>{this.state.selectedAddress}</b>, you have{" "}
               <b>
@@ -223,6 +231,7 @@ export class Dapp extends React.Component {
     this._intializeEthers();
     this._getTokenData();
     this._startPollingData();
+    this._getStakeTestData();
   }
 
   async _intializeEthers() {
@@ -237,15 +246,9 @@ export class Dapp extends React.Component {
       this._provider.getSigner(0)
     );
 
-    this._insurance = new ethers.Contract(
-      insuranceAddress.Insurance,
-      InsuranceArtifact.abi,
-      this._provider.getSigner(0)
-    );
-
-    this._stake = new ethers.Contract(
-      stakeAddress.Stake,
-      StakeArtifact.abi,
+    this._stakeTest = new ethers.Contract(
+      stakeTestAddress.StakeTest,
+      StakeTestArtifact.abi,
       this._provider.getSigner(0)
     );
   }
@@ -278,9 +281,51 @@ export class Dapp extends React.Component {
     this.setState({ tokenData: { name, symbol } });
   }
 
+  async _getStakeTestData() {
+    const poolFunds = await this._stakeTest.poolFunds();
+    const userInitialStake = await this._stakeTest.userInitialStake();
+    const userStakeValue = await this._stakeTest.userStakeValue();
+    const poolRate = await this._stakeTest.poolRate();
+
+    this.setState({ stakeData: { poolFunds, userInitialStake, userStakeValue, poolRate } });
+  }
+
   async _updateBalance() {
     const balance = await this._token.balanceOf(this.state.selectedAddress);
     this.setState({ balance });
+  }
+
+  async _stakeFunds(amount) {
+
+    try {
+      // clear old errors
+      this._dismissTransactionError();
+
+      const tx = await this._stakeTest.stakeFunds(amount);
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+
+      await this._getStakeTestData();
+    } catch (error) {
+      // We check the error code to see if this error was produced because the
+      // user rejected a tx. If that's the case, we do nothing.
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+
+      // Other errors are logged and stored in the Dapp's state. This is used to
+      // show them to the user, and for debugging.
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+      // this part of the state.
+      this.setState({ txBeingSent: undefined });
+    }
   }
 
   // This method sends an ethereum transaction to transfer tokens.

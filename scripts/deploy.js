@@ -3,6 +3,10 @@
 
 const fs = require("fs-extra");
 
+// NEED TO ALSO UPDATE CONTRACT NAMES BELOW
+const TEST = true;
+var sourceFolder = TEST ? folder = "TestContracts" : folder = "EthInsurance";
+
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -23,20 +27,30 @@ async function main() {
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   // these are the two arguments that Insurance contract takes
-  daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-  uniAddress = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+  const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+  const uniAddress = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+
+  // argument for Greeting contracts
+  const greeting = "Hello world;"
 
   // need to enter manually for now
-  var contracts = {
-    "Token": [],
+  var realContracts = {
     "Insurance": [daiAddress, uniAddress],
-    "Stake": []
+    "Stake": [],
   };
+
+  var testContracts = {
+    "Token": [],
+    "Greeter": [greeting],
+    "StakeTest": [],
+  }
+
+  var contracts = TEST ? testContracts : realContracts;
 
   console.log(`contracts object is ${contracts}`);
 
-  await updateContractsFolder().then(console.log("InsFronted contract folder updated"));
-  await updateArtifactsFolder().then(console.log("InsFronted artifacts folder updated"));
+  await updateContractsFolder().then(console.log("InsFrontend contract folder updated"));
+  await updateArtifactsFolder().then(console.log("InsFrontend artifacts folder updated"));
 
   for (const name of Object.keys(contracts)) {
 
@@ -75,7 +89,7 @@ function saveFileOnFrontend(name, contract) {
 
 async function updateContractsFolder() {
 
-  const contractSource = __dirname + "/../../EthInsurance/contracts";
+  const contractSource = __dirname + `/../../${sourceFolder}/contracts`;
   const contractDestination = __dirname + "/../contracts";
 
   if (!fs.existsSync(contractDestination)) {
@@ -88,7 +102,7 @@ async function updateContractsFolder() {
 
 async function updateArtifactsFolder() {
 
-  const artifactSource = __dirname + "/../../EthInsurance/artifacts";
+  const artifactSource = __dirname + `/../../${sourceFolder}/artifacts`;
   const artifactDestination = __dirname + "/../artifacts";
 
   if (!fs.existsSync(artifactDestination)) {
