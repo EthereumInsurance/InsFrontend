@@ -1,4 +1,4 @@
-Quick things:
+Important things:
 1. Compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
 2. Sometimes you need to restart Metamask account for it to work on Hardhat blockchain
   - Settings > Advanced > Reset Account
