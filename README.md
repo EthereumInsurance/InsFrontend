@@ -1,13 +1,7 @@
-# Hardhat Hackathon Boilerplate
-
-This repository contains a sample project that you can use as the starting point
-for your Ethereum project. It's also a great fit for learning the basics of
-smart contract development.
-
-This project is intended to be used with the
-[Hardhat Beginners Tutorial](https://hardhat.org/tutorial), but you should be
-able to follow it by yourself by reading the README and exploring its
-`contracts`, `tests`, `scripts` and `frontend` directories.
+Quick things:
+1. compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
+2. Sometimes you need to restart Metamask account for it to work on Hardhat blockchain
+  - Settings > Advanced > Reset Account
 
 ## Quick start
 
