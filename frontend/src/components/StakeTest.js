@@ -22,7 +22,7 @@ export function StakeTest({ stakeFunds }) {
           <input
             className="form-control"
             type="number"
-            step="100"
+            step="1"
             name="amount"
             placeholder="Amount to Stake"
             required

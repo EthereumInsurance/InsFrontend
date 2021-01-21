@@ -2,10 +2,14 @@
 // yours, or create new ones.
 
 const fs = require("fs-extra");
+const erc20 = require("@studydefi/money-legos/erc20");
 
 // NEED TO ALSO UPDATE CONTRACT NAMES BELOW
 const TEST = true;
 var sourceFolder = TEST ? folder = "TestContracts" : folder = "EthInsurance";
+
+const DAI_WHALE = "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE";
+const YOUR_ADDRESS = "0xE400820f3D60d77a3EC8018d44366ed0d334f93C";
 
 async function main() {
   // This is just a convenience check
@@ -17,6 +21,37 @@ async function main() {
     );
   }
 
+  // impersonating large Dai holder account
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [DAI_WHALE]}
+  )
+
+  const impSigner = await ethers.provider.getSigner(DAI_WHALE);
+  console.log("impSigner balance:", (await impSigner.getBalance()).toString());
+
+  // getting access to Dai contract
+  const daiABI = erc20.dai.abi;
+  const daiAddress = erc20.dai.address;
+  const dai = await new ethers.Contract(daiAddress, daiABI, impSigner);
+
+  // send ETH to your address for gas
+  await impSigner.sendTransaction({
+      from: DAI_WHALE,
+      to: YOUR_ADDRESS,
+      value: ethers.utils.parseEther("100"),
+    })
+
+  // send DAI to your address for staking
+  // using parseEther because Dai also has 18 decimals
+  await dai.transfer(YOUR_ADDRESS, ethers.utils.parseEther("10000"), { from: DAI_WHALE })
+
+  // stop impersonating Dai whale
+  await network.provider.request({
+    method: "hardhat_stopImpersonatingAccount",
+    params: [DAI_WHALE]}
+  )
+
   // ethers is available in the global scope
   const [deployer] = await ethers.getSigners();
   console.log(
@@ -26,16 +61,15 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // these are the two arguments that Insurance contract takes
-  const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-  const uniAddress = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
-
   // argument for Greeting contracts
   const greeting = "Hello world;"
 
+  // adding USDC address for second Insurance field (need to fix later)
+  const usdcAddress = erc20.usdc.address;
+
   // need to enter manually for now
   var realContracts = {
-    "Insurance": [daiAddress, uniAddress],
+    "Insurance": [daiAddress, usdcAddress],
     "Stake": [],
   };
 

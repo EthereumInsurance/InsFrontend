@@ -34,6 +34,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
+    "@studydefi/money-legos": "^2.4.1",
+    "antd": "^4.10.3",
     "fs-extra": "^9.1.0"
   }
 }

@@ -18,6 +18,9 @@ import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
 import { StakeTest } from "./StakeTest";
+import { TranchesTable } from "./TranchesTable";
+
+import { Radio, Divider, Space, } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -54,6 +57,7 @@ export class Dapp extends React.Component {
       transactionError: undefined,
       networkError: undefined,
       stakeData: undefined,
+      displayCurrency: 'native'
     };
 
     this.state = this.initialState;
@@ -85,6 +89,10 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
+    // console.log(`tokenData is ${!this.state.tokenData}`);
+    // console.log(`balance is ${!this.state.balance}`);
+    // console.log(`stakeData is ${!this.state.stakeData}`);
+
     if (!this.state.tokenData || !this.state.balance || !this.state.stakeData) {
       return <Loading />;
     }
@@ -95,7 +103,7 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             <h1>
-              {this.state.tokenData.name} ({this.state.tokenData.symbol})
+              Ethereum Insurance
             </h1>
             <h3>
               User Stake: {this.state.stakeData.userInitialStake.toString()}
@@ -105,68 +113,24 @@ export class Dapp extends React.Component {
                 this._stakeFunds(amount)
               }
             />
-            <p>
-              Welcome <b>{this.state.selectedAddress}</b>, you have{" "}
-              <b>
-                {this.state.balance.toString()} {this.state.tokenData.symbol}
-              </b>
-              .
-            </p>
+
+
           </div>
         </div>
 
-        <hr />
+      <Divider/>
+        <Radio.Group
+          options={['native','ETH','USD']}
+          onChange={(e)=>{this.setDisplayCurrency(e.target.value)}}
+          value={this.state.displayCurrency}
+          optionType="button"
+          buttonStyle="solid"
+          align="right"
+        />
 
-        <div className="row">
-          <div className="col-12">
-            {/*
-              Sending a transaction isn't an immediate action. You have to wait
-              for it to be mined.
-              If we are waiting for one, we show a message here.
-            */}
-            {this.state.txBeingSent && (
-              <WaitingForTransactionMessage txHash={this.state.txBeingSent} />
-            )}
+        <TranchesTable />
 
-            {/*
-              Sending a transaction can fail in multiple ways.
-              If that happened, we show a message here.
-            */}
-            {this.state.transactionError && (
-              <TransactionErrorMessage
-                message={this._getRpcErrorMessage(this.state.transactionError)}
-                dismiss={() => this._dismissTransactionError()}
-              />
-            )}
-          </div>
-        </div>
 
-        <div className="row">
-          <div className="col-12">
-            {/*
-              If the user has no tokens, we don't show the Transfer form
-            */}
-            {this.state.balance.eq(0) && (
-              <NoTokensMessage selectedAddress={this.state.selectedAddress} />
-            )}
-
-            {/*
-              This component displays a form that the user can use to send a
-              transaction and transfer some tokens.
-              The component doesn't have logic, it just calls the transferTokens
-              callback.
-              gt stands for greater than
-            */}
-            {this.state.balance.gt(0) && (
-              <Transfer
-                transferTokens={(to, amount) =>
-                  this._transferTokens(to, amount)
-                }
-                tokenSymbol={this.state.tokenData.symbol}
-              />
-            )}
-          </div>
-        </div>
       </div>
     );
   }
@@ -295,6 +259,11 @@ export class Dapp extends React.Component {
     this.setState({ balance });
   }
 
+  setDisplayCurrency(displayCurrency) {
+    console.log(`setDisplayCurrency to ${displayCurrency}`)
+    this.setState({ displayCurrency });
+  }
+
   async _stakeFunds(amount) {
 
     try {
@@ -415,12 +384,13 @@ export class Dapp extends React.Component {
 
   // This method checks if Metamask selected network is Localhost:8545
   _checkNetwork() {
-    if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID) {
+
+    if (window.ethereum.chainId === HARDHAT_NETWORK_ID || 1) {
       return true;
     }
 
     this.setState({
-      networkError: 'Please connect Metamask to Localhost:8545'
+      networkError: `${window.ethereum.networkVersion} NetworkVersion Error!!!`
     });
 
     return false;
