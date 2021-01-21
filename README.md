@@ -1,8 +1,9 @@
 Important things:
 1. Compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
-2. MUST do this in your MetaMask account:
+2. In InsFrontend/scripts/deploy.js, change YOUR_ADDRESS to the address you want to test with (your favorite MetaMask account address)
+3. MUST do this in your MetaMask account:
   - Settings > Networks > Localhost 8545 > set ChainId to 1 (instead of 1337)
-2. Sometimes you need to restart Metamask account so the nonce matches up with the current blockchain
+4. Sometimes you need to restart Metamask account so the nonce matches up with the current blockchain
   - Settings > Advanced > Reset Account
 
 ## Quick start
