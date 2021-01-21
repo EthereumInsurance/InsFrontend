@@ -1,13 +1,10 @@
-# Hardhat Hackathon Boilerplate
-
-This repository contains a sample project that you can use as the starting point
-for your Ethereum project. It's also a great fit for learning the basics of
-smart contract development.
-
-This project is intended to be used with the
-[Hardhat Beginners Tutorial](https://hardhat.org/tutorial), but you should be
-able to follow it by yourself by reading the README and exploring its
-`contracts`, `tests`, `scripts` and `frontend` directories.
+Important things:
+1. Compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
+2. In InsFrontend/scripts/deploy.js, change YOUR_ADDRESS to the address you want to test with (your favorite MetaMask account address)
+3. MUST do this in your MetaMask account:
+  - Settings > Networks > Localhost 8545 > set ChainId to 1 (instead of 1337)
+4. Sometimes you need to restart Metamask account so the nonce matches up with the current blockchain
+  - Settings > Advanced > Reset Account
 
 ## Quick start
 
