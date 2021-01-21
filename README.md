@@ -1,6 +1,8 @@
 Important things:
 1. Compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
-2. Sometimes you need to restart Metamask account for it to work on Hardhat blockchain
+2. MUST do this in your MetaMask account:
+  - Settings > Networks > Localhost 8545 > set ChainId to 1 (instead of 1337)
+2. Sometimes you need to restart Metamask account so the nonce matches up with the current blockchain
   - Settings > Advanced > Reset Account
 
 ## Quick start
