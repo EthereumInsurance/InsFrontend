@@ -17,8 +17,8 @@ import { Transfer } from "./Transfer";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
-import { StakeTest } from "./StakeTest";
 import { TranchesTable } from "./TranchesTable";
+import { UserFundsTable } from "./UserFundsTable";
 
 import { Radio, Divider, Space, } from "antd";
 
@@ -102,33 +102,34 @@ export class Dapp extends React.Component {
       <div className="container p-4">
         <div className="row">
           <div className="col-12">
-            <h1>
+            <h1 style={{ marginBottom: 25 }} >
               Ethereum Insurance
             </h1>
-            <h3>
-              User Stake: {this.state.stakeData.userInitialStake.toString()}
-            </h3>
-            <StakeTest
-              stakeFunds={(amount) =>
-                this._stakeFunds(amount)
-              }
-            />
-
-
           </div>
         </div>
-
+      <Radio.Group
+        options={['native','ETH','USD']}
+        onChange={(e)=>{this.setDisplayCurrency(e.target.value)}}
+        value={this.state.displayCurrency}
+        optionType="button"
+        buttonStyle="solid"
+        align="right"
+      />
       <Divider/>
-        <Radio.Group
-          options={['native','ETH','USD']}
-          onChange={(e)=>{this.setDisplayCurrency(e.target.value)}}
-          value={this.state.displayCurrency}
-          optionType="button"
-          buttonStyle="solid"
-          align="right"
-        />
-
-        <TranchesTable />
+      {this.state.stakeData.userStakeValue&&this.state.stakeData.userStakeValue>0&&
+        <>
+          <h3>Your Dashboard</h3>
+          <UserFundsTable userStakeValue={this.state.stakeData.userStakeValue} />
+        </>
+      }
+        <>
+          <h3>Staking Pools</h3>
+          <TranchesTable
+            stakeFunds={(amount) =>
+              this._stakeFunds(amount)
+            }
+          />
+        </>
 
 
       </div>

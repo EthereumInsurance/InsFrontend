@@ -4,6 +4,7 @@ require("@nomiclabs/hardhat-waffle");
 // project. It imports a Hardhat task definition, that can be used for
 // testing the frontend.
 require("./tasks/faucet");
+require("./tasks/reset");
 
 // Using block pinning (block from 1/20/2021)
 
@@ -12,7 +13,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: "https://eth-mainnet.alchemyapi.io/v2/-76KsrX6ucXk1TeDaLniCbdJIlPbL5q5",
-        blockNumber: 11695056,
+        blockNumber: 11695070,
       },
     },
   },
