@@ -13,7 +13,6 @@ export function UserFundsTable({ userStakeValue }) {
   const dataSource = [
     {
       key: '1',
-      type: 'Mezzanine',
       strategy: 'Aave V2',
       currentYield: `${7.46}%`,
       pastYield: `${7.13}%`,
@@ -26,11 +25,6 @@ export function UserFundsTable({ userStakeValue }) {
   ];
 
   const columns = [
-    {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-    },
     {
       title: 'Strategy',
       dataIndex: 'strategy',

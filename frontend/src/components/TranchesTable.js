@@ -38,38 +38,19 @@ export function TranchesTable({ stakeFunds }) {
   const dataSource = [
     {
       key: '1',
-      type: 'Junior',
-      yield: `${9.13}%`,
-      lockup: '3 days',
       strategy: 'Aave V2',
-      poolSize: '245.8',
-      stake: <Button type="primary" ghost onClick={showModal}>Stake</Button>,
-    },
-    {
-      key: '2',
-      type: 'Mezzanine',
       yield: `${7.46}%`,
       lockup: '3 days',
-      strategy: 'Aave V2',
-      poolSize: '377.3',
-      stake: <Button type="primary" ghost onClick={showModal}>Stake</Button>,
-    },
-    {
-      key: '3',
-      type: 'Senior',
-      yield: `${5.34}%`,
-      lockup: '3 days',
-      strategy: 'Aave V2',
-      poolSize: '412.0',
+      poolSize: '245.8',
       stake: <Button type="primary" ghost onClick={showModal}>Stake</Button>,
     },
   ];
 
   const columns = [
     {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
+      title: 'Strategy',
+      dataIndex: 'strategy',
+      key: 'strategy',
     },
     {
       title: 'Yield',
@@ -80,11 +61,6 @@ export function TranchesTable({ stakeFunds }) {
       title: 'Lockup',
       dataIndex: 'lockup',
       key: 'lockup',
-    },
-    {
-      title: 'Strategy',
-      dataIndex: 'strategy',
-      key: 'strategy',
     },
     {
       title: 'Pool Size ($M)',

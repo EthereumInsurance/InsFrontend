@@ -19,8 +19,9 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
 import { TranchesTable } from "./TranchesTable";
 import { UserFundsTable } from "./UserFundsTable";
+import { TwoCards } from "./TwoCards";
 
-import { Radio, Divider, Space, } from "antd";
+import { Radio, Divider, Space, Menu } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -57,7 +58,8 @@ export class Dapp extends React.Component {
       transactionError: undefined,
       networkError: undefined,
       stakeData: undefined,
-      displayCurrency: 'native'
+      displayCurrency: 'native',
+      menuTab: "1",
     };
 
     this.state = this.initialState;
@@ -107,32 +109,31 @@ export class Dapp extends React.Component {
             </h1>
           </div>
         </div>
-      <Radio.Group
-        options={['native','ETH','USD']}
-        onChange={(e)=>{this.setDisplayCurrency(e.target.value)}}
-        value={this.state.displayCurrency}
-        optionType="button"
-        buttonStyle="solid"
-        align="right"
-      />
-      <Divider/>
-      {this.state.stakeData.userStakeValue&&this.state.stakeData.userStakeValue>0&&
-        <>
-          <h3>Your Dashboard</h3>
-          <UserFundsTable userStakeValue={this.state.stakeData.userStakeValue} />
-        </>
-      }
-        <>
-          <h3>Staking Pools</h3>
-          <TranchesTable
-            stakeFunds={(amount) =>
-              this._stakeFunds(amount)
-            }
-          />
-        </>
+        <Menu onClick={this._setMenuTab} selectedKeys={this.state.menuTab} mode="horizontal">
+          <Menu.Item key="1" >
+            Navigation One
+          </Menu.Item>
+          <Menu.Item key="2" >
+            Navigation Two
+          </Menu.Item>
+        </Menu>
+        {this.state.menuTab == "1" &&
+          <div>
+            <>
+              <TwoCards />
+              <h3>Your Funds</h3>
+              <UserFundsTable userStakeValue={this.state.stakeData.userStakeValue} />
+              <h3>Staking Pool</h3>
+              <TranchesTable
+                stakeFunds={(amount) =>
+                  this._stakeFunds(amount)
+                }
+              />
+            </>
+          </div>
+        }
 
-
-      </div>
+        </div>
     );
   }
 
@@ -395,5 +396,11 @@ export class Dapp extends React.Component {
     });
 
     return false;
+  }
+
+  _setMenuTab = (event) => {
+    console.log(`set to ${event.key}`)
+    this.setState({ menuTab: event.key });
+
   }
 }

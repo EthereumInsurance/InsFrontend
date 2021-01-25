@@ -61,9 +61,6 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // argument for Greeting contracts
-  const greeting = "Hello world;"
-
   // adding USDC address for second Insurance field (need to fix later)
   const usdcAddress = erc20.usdc.address;
 
@@ -75,7 +72,6 @@ async function main() {
 
   var testContracts = {
     "Token": [],
-    "Greeter": [greeting],
     "StakeTest": [],
   }
 
