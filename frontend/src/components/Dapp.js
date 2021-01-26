@@ -17,9 +17,8 @@ import { Transfer } from "./Transfer";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
-import { TranchesTable } from "./TranchesTable";
-import { UserFundsTable } from "./UserFundsTable";
 import { TwoCards } from "./TwoCards";
+import Charts from "./Charts";
 
 import { Radio, Divider, Space, Menu } from "antd";
 
@@ -109,28 +108,34 @@ export class Dapp extends React.Component {
             </h1>
           </div>
         </div>
-        <Menu onClick={this._setMenuTab} selectedKeys={this.state.menuTab} mode="horizontal">
+        <Menu
+          style={{textAlign:"center", marginBottom: '25px'}}
+          onClick={this._setMenuTab}
+          selectedKeys={this.state.menuTab}
+          mode="horizontal">
           <Menu.Item key="1" >
-            Navigation One
+            Dashboard
           </Menu.Item>
           <Menu.Item key="2" >
-            Navigation Two
+            Allocations
           </Menu.Item>
         </Menu>
         {this.state.menuTab == "1" &&
-          <div>
-            <>
-              <TwoCards />
-              <h3>Your Funds</h3>
-              <UserFundsTable userStakeValue={this.state.stakeData.userStakeValue} />
-              <h3>Staking Pool</h3>
-              <TranchesTable
-                stakeFunds={(amount) =>
-                  this._stakeFunds(amount)
-                }
-              />
-            </>
-          </div>
+          <>
+            <TwoCards
+              stakeFunds={(amount) =>
+                this._stakeFunds(amount)
+              }
+              userStakeValue={this.state.stakeData.userStakeValue}
+            />
+          </>
+        }
+        {this.state.menuTab == "2" &&
+          <>
+            <Charts
+
+            />
+          </>
         }
 
         </div>
