@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import { ethers } from "ethers";
 import {
   PieChart, Pie, Sector, Cell, ResponsiveContainer,
 } from 'recharts';
@@ -44,7 +45,7 @@ const renderCustomizedLabel = ({
   return (
     <>
       <foreignObject x={adjOutsideX} y={adjOutsideY} width={500} height={500}>
-        <div display="flex" alignItems="center" flexDirection="row">
+        <div display="flex" alignitems="center" flexdirection="row">
           <div xmlns="http://www.w3.org/1999/xhtml">
             <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} alt="image" />
             {` ${name}`}
@@ -66,15 +67,15 @@ export default class Charts extends PureComponent {
     <>
       <h2 style={{ marginLeft: '13%', float: 'left' }}>Covered Protocols</h2>
       <h2 style={{ marginRight: '16%', float: 'right' }}>Pool Strategies</h2>
-      <ResponsiveContainer width='99%' aspect={2}>
-        <PieChart >
+      <ResponsiveContainer width='99%' aspect={2.2}>
+        <PieChart style={{ marginBottom: "50px" }}>
           <Pie
             data={protocolData}
             cx="25%"
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="70%"
+            outerRadius="75%"
             fill="#8884d8"
             dataKey="value"
           >
@@ -93,7 +94,7 @@ export default class Charts extends PureComponent {
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="70%"
+            outerRadius="75%"
             fill="#8884d8"
             dataKey="value"
           >
@@ -103,6 +104,16 @@ export default class Charts extends PureComponent {
           </Pie>
         </PieChart>
       </ResponsiveContainer>
+      <div style={{ marginLeft: '13%', float: 'left', whiteSpace: 'nowrap' }}>
+        <h5 style={{ display: "inline-block"}}>Total Covered:</h5>
+        <span style={{ display: "inline-block", marginLeft: "10%"}}>$1.1Bn</span>
+      </div>
+      <div style={{ marginRight: '16%', float: 'right', whiteSpace: 'nowrap' }}>
+        <h5 style={{ display: "inline-block"}}>Total Locked:</h5>
+        <span style={{ display: "inline-block", marginLeft: "10%"}}>
+          ${ethers.utils.formatEther(this.props.totalStakedFunds.toString()).toString()}
+        </span>
+      </div>
     </>
     );
   }

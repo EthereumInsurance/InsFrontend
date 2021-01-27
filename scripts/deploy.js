@@ -4,9 +4,7 @@
 const fs = require("fs-extra");
 const erc20 = require("@studydefi/money-legos/erc20");
 
-// NEED TO ALSO UPDATE CONTRACT NAMES BELOW
-const TEST = true;
-var sourceFolder = TEST ? folder = "TestContracts" : folder = "EthInsurance";
+var sourceFolder = "EthInsurance";
 
 const DAI_WHALE = "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE";
 const YOUR_ADDRESS = "0xE400820f3D60d77a3EC8018d44366ed0d334f93C";
@@ -33,7 +31,7 @@ async function main() {
   // getting access to Dai contract
   const daiABI = erc20.dai.abi;
   const daiAddress = erc20.dai.address;
-  const dai = await new ethers.Contract(daiAddress, daiABI, impSigner);
+  const daiForImp = await new ethers.Contract(daiAddress, daiABI, impSigner);
 
   // send ETH to your address for gas
   await impSigner.sendTransaction({
@@ -44,7 +42,7 @@ async function main() {
 
   // send DAI to your address for staking
   // using parseEther because Dai also has 18 decimals
-  await dai.transfer(YOUR_ADDRESS, ethers.utils.parseEther("10000"), { from: DAI_WHALE })
+  await daiForImp.transfer(YOUR_ADDRESS, ethers.utils.parseEther("10000"), { from: DAI_WHALE })
 
   // stop impersonating Dai whale
   await network.provider.request({
@@ -52,47 +50,65 @@ async function main() {
     params: [DAI_WHALE]}
   )
 
-  // ethers is available in the global scope
-  const [deployer] = await ethers.getSigners();
+  // impersonating our own account (to prevent having to sign with MetaMask)
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [YOUR_ADDRESS]}
+  )
+
+  const youSigner = await ethers.provider.getSigner(YOUR_ADDRESS);
+
   console.log(
     "Deploying the contracts with the account:",
-    await deployer.getAddress()
+    await youSigner.getAddress()
   );
 
-  console.log("Account balance:", (await deployer.getBalance()).toString());
-
-  // adding USDC address for second Insurance field (need to fix later)
-  const usdcAddress = erc20.usdc.address;
-
-  // need to enter manually for now
-  var realContracts = {
-    "Insurance": [daiAddress, usdcAddress],
-    "Stake": [],
-  };
-
-  var testContracts = {
-    "Token": [],
-    "StakeTest": [],
-  }
-
-  var contracts = TEST ? testContracts : realContracts;
-
-  console.log(`contracts object is ${contracts}`);
+  console.log("Account balance:", (await youSigner.getBalance()).toString());
 
   await updateContractsFolder().then(console.log("InsFrontend contract folder updated"));
   await updateArtifactsFolder().then(console.log("InsFrontend artifacts folder updated"));
 
-  for (const name of Object.keys(contracts)) {
+  // Deploy contracts
+  const dai = await new ethers.Contract(daiAddress, daiABI, youSigner);
 
-    const args = contracts[name];
-    const Contract = await ethers.getContractFactory(name);
-    const deployedContract = await Contract.deploy(...args);
-    await deployedContract.deployed();
+  const STAKE = await ethers.getContractFactory("Stake");
+  StakeToken = await STAKE.deploy();
+  await StakeToken.deployed();
+  saveFileOnFrontend("Stake", StakeToken);
 
-    console.log(`${name} address:`, deployedContract.address);
-    // We also save the contract's artifacts and address in the frontend directory
-    saveFileOnFrontend(name, deployedContract);
-  };
+  const StrategyManager = await ethers.getContractFactory("StrategyManager");
+  strategyManager = await StrategyManager.deploy();
+  await strategyManager.deployed();
+  saveFileOnFrontend("StrategyManager", strategyManager);
+
+  const Insurance = await ethers.getContractFactory("Insurance");
+  insurance = await Insurance.deploy(
+    dai.address,
+    StakeToken.address,
+    strategyManager.address
+  );
+  await insurance.deployed();
+  saveFileOnFrontend("Insurance", insurance);
+
+  // SETUP
+  await insurance.setTimeLock(10);
+  // Allows the first argument address an allowance over the dai contract's tokens
+  // MaxUint256 is just a really big number
+  await dai.approve(insurance.address, ethers.constants.MaxUint256);
+  console.log(`allowance for insurance address is ${await dai.allowance(YOUR_ADDRESS, insurance.address)}`)
+  await StakeToken.approve(insurance.address, ethers.constants.MaxUint256);
+  // this is method is available due to inheriting Ownable
+  // sets owner for contract to the first argument address
+  await StakeToken.transferOwnership(insurance.address);
+  const timeLock = await insurance.timeLock();
+  console.log(`timeLock is ${timeLock}`)
+
+  // stop impersonating our account
+  await network.provider.request({
+    method: "hardhat_stopImpersonatingAccount",
+    params: [YOUR_ADDRESS]}
+  )
+
 
 }
 

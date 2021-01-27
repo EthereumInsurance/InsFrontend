@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { ethers } from "ethers";
 import { Card, Col, Row, InputNumber, Select, Button, Space } from "antd";
 import 'antd/dist/antd.css';
 import './index.css';
 import 'antd/lib/style/themes/default.less';
 
 
-export function TwoCards({ stakeFunds, userStakeValue }) {
+export function TwoCards({ stakeFunds, balance }) {
 
   const { Option } = Select;
 
@@ -25,7 +26,7 @@ export function TwoCards({ stakeFunds, userStakeValue }) {
 
   const handleStake = () => {
     if (stakeAmount > 0) {
-      stakeFunds(stakeAmount)
+      stakeFunds(stakeAmount.toString())
     }
   };
 
@@ -100,7 +101,7 @@ export function TwoCards({ stakeFunds, userStakeValue }) {
             <p style={{textAlign:'left', margin:40}}>
               <b>Initial Stake</b>
               <span style={{float:'right'}}>
-                ${userStakeValue.toString()}.0M
+                ${(ethers.utils.formatEther( balance.toString() )).toString()}
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>

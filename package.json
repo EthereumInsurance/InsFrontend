@@ -35,6 +35,8 @@
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
     "@studydefi/money-legos": "^2.4.1",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "antd": "^4.10.3",
     "fs-extra": "^9.1.0",
     "react-minimal-pie-chart": "^8.1.0",
