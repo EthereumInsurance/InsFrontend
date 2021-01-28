@@ -3,11 +3,16 @@
 
 const fs = require("fs-extra");
 const erc20 = require("@studydefi/money-legos/erc20");
+const { block } = require("./utils.js");
+const { parseEther } = require("ethers/lib/utils");
 
 var sourceFolder = "EthInsurance";
 
 const DAI_WHALE = "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE";
 const YOUR_ADDRESS = "0xE400820f3D60d77a3EC8018d44366ed0d334f93C";
+const PLACEHOLDER_PROTOCOL =
+  "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761c7";
+const onePercent = ethers.BigNumber.from("10").pow(16);
 
 async function main() {
   // This is just a convenience check
@@ -71,15 +76,23 @@ async function main() {
   // Deploy contracts
   const dai = await new ethers.Contract(daiAddress, daiABI, youSigner);
 
+  console.log(`before StakeToken deploy`)
+
   const STAKE = await ethers.getContractFactory("Stake");
   StakeToken = await STAKE.deploy();
   await StakeToken.deployed();
   saveFileOnFrontend("Stake", StakeToken);
 
+  console.log('after StakeToken deploy')
+
   const StrategyManager = await ethers.getContractFactory("StrategyManager");
+  console.log(`after StrategyManager line 1`)
   strategyManager = await StrategyManager.deploy();
+  console.log(`after StrategyManager line 2`)
   await strategyManager.deployed();
   saveFileOnFrontend("StrategyManager", strategyManager);
+
+  console.log('after StrategyManager deploy')
 
   const Insurance = await ethers.getContractFactory("Insurance");
   insurance = await Insurance.deploy(
@@ -101,7 +114,10 @@ async function main() {
   // sets owner for contract to the first argument address
   await StakeToken.transferOwnership(insurance.address);
   const timeLock = await insurance.timeLock();
-  console.log(`timeLock is ${timeLock}`)
+  console.log(`timeLock is ${timeLock}`);
+
+  await addProtocol(insurance, PLACEHOLDER_PROTOCOL);
+
 
   // stop impersonating our account
   await network.provider.request({
@@ -110,6 +126,20 @@ async function main() {
   )
 
 
+}
+
+async function addProtocol(insuranceContract, protocolAddress) {
+  blockNumber = await block(
+    insuranceContract.updateProfiles(
+      protocolAddress,
+      parseEther("500"),
+      onePercent,
+      ethers.constants.MaxUint256,
+      false
+    )
+  );
+  console.log(`coveredFunds for protocol is ${(await insuranceContract.coveredFunds(protocolAddress)).toString()}`)
+  console.log(`premiumPerBlock for protocol is ${(await insuranceContract.premiumPerBlock(protocolAddress)).toString()}`)
 }
 
 function saveFileOnFrontend(name, contract) {
