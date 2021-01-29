@@ -30,6 +30,7 @@ import { Radio, Divider, Space, Menu } from "antd";
 const HARDHAT_NETWORK_ID = '1337';
 
 const { parseEther } = require("ethers/lib/utils");
+const erc20 = require("@studydefi/money-legos/erc20");
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -92,11 +93,11 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    // console.log(`tokenData is ${!this.state.tokenData}`);
+    // console.log(`totalStakedFunds is ${!this.state.totalStakedFunds}`);
     // console.log(`balance is ${!this.state.balance}`);
-    // console.log(`stakeData is ${!this.state.stakeData}`);
+    // console.log(`insuranceData is ${!this.state.insuranceData}`);
 
-    if (!this.state.balance || !this.state.insuranceData) {
+    if (!this.state.balance || !this.state.insuranceData || !this.state.totalStakedFunds) {
       return <Loading />;
     }
 
@@ -218,6 +219,16 @@ export class Dapp extends React.Component {
       this._provider.getSigner(0)
     );
 
+    // const defaultAccount = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+    // const daiABI = erc20.dai.abi;
+    // const daiAddress = erc20.dai.address;
+    // this.daiContract = await new ethers.Contract(daiAddress, daiABI, this._provider.getSigner(0));
+    // console.log(`insurance address is ${this._insurance.address}`)
+    // console.log(`this.state.selectedAddress is ${this.state.selectedAddress}`)
+    // console.log(`allowance for insurance address is ${await this.daiContract.allowance(defaultAccount, this._insurance.address)}`)
+    // this.daiContract = await new ethers.Contract(daiAddress, daiABI, this._provider.getSigner(0));
+    // await this.daiContract.approve(this._insurance.address, ethers.constants.MaxUint256);
+    // console.log(`allowance for insurance address is ${await this.daiContract.allowance(this.state.selectedAddress, this._insurance.address)}`)
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -260,6 +271,7 @@ export class Dapp extends React.Component {
     try {
       // clear old errors
       this._dismissTransactionError();
+
       const tx = await this._insurance.stakeFunds(parseEther(amount));
       this.setState({ txBeingSent: tx.hash });
 

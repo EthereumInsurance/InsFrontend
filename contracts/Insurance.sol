@@ -196,6 +196,7 @@ contract Insurance is IPool, Ownable {
         }
         totalStakedFunds = totalStakedFunds.add(_amount);
         stakeToken.mint(msg.sender, stake);
+
         if (redirectStakeToStrategy) {
             _depositStrategyManager(_amount);
         }
