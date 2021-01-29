@@ -59,7 +59,7 @@ export function TwoCards({
           >
             <h4 style={{textAlign:'center'}}>Staking Pool</h4>
             <p style={{textAlign:'left', margin:40}}>
-              <b>Current Yield</b>
+              <b>Current APY</b>
               <span style={{float:'right'}}>
                 7.46%
               </span>
@@ -116,7 +116,7 @@ export function TwoCards({
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
-              <b>Current Yield</b>
+              <b>Current APY</b>
               <span style={{float:'right'}}>
                 7.46%
               </span>
