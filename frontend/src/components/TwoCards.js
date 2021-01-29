@@ -6,7 +6,14 @@ import './index.css';
 import 'antd/lib/style/themes/default.less';
 
 
-export function TwoCards({ stakeFunds, balance }) {
+export function TwoCards({
+  stakeFunds,
+  userStake,
+  earningsOnStake,
+  totalPoolFunds,
+  userTotalFunds
+})
+{
 
   const { Option } = Select;
 
@@ -38,12 +45,16 @@ export function TwoCards({ stakeFunds, balance }) {
     setUnlockStarted(false);
   };
 
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   return (
     <div>
         <Row>
           <Card
             className="card"
-            style={{ backgroundColor: '#F0F0F0' }}
+            style={{ backgroundColor: '#f8f8ff' }}
             bordered={true}
           >
             <h4 style={{textAlign:'center'}}>Staking Pool</h4>
@@ -56,7 +67,7 @@ export function TwoCards({ stakeFunds, balance }) {
             <p style={{textAlign:'left', margin:40}}>
               <b>Pool Size</b>
               <span style={{float:'right'}}>
-                $245.8M
+                ${numberWithCommas(totalPoolFunds.toFixed(2))}
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
@@ -78,8 +89,8 @@ export function TwoCards({ stakeFunds, balance }) {
                 style={{
                   display: 'flex',
                   justifyContent: 'center',
-                  backgroundColor: 'powderblue',
-                  borderColor: 'powderblue',
+                  backgroundColor: '#99CCFF',
+                  borderColor: '#99CCFF',
                   color: 'black'
                 }}
                 onClick={handleStake}
@@ -94,14 +105,14 @@ export function TwoCards({ stakeFunds, balance }) {
 
           <Card
             className="card"
-            style={{ backgroundColor: '#F0F0F0' }}
+            style={{ backgroundColor: '#f8f8ff' }}
             bordered={true}
           >
             <h4 style={{textAlign:'center'}}>Your Funds</h4>
             <p style={{textAlign:'left', margin:40}}>
               <b>Initial Stake</b>
               <span style={{float:'right'}}>
-                ${(ethers.utils.formatEther( balance.toString() )).toString()}
+                ${numberWithCommas(userStake.toFixed(2))}
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
@@ -113,13 +124,13 @@ export function TwoCards({ stakeFunds, balance }) {
             <p style={{textAlign:'left', margin:40}}>
               <b>Total Earnings</b>
               <span style={{float:'right'}}>
-                $413.7k
+                ${numberWithCommas(earningsOnStake.toFixed(2))}
               </span>
             </p>
             <h5 style={{textAlign:'left', margin:40}}>
               <b>Total Funds</b>
               <span style={{float:'right'}}>
-                $3.6M
+                ${numberWithCommas(userTotalFunds.toFixed(2))}
               </span>
             </h5>
             <div style={{ display: 'flex', justifyContent: 'center'}}>
@@ -129,8 +140,8 @@ export function TwoCards({ stakeFunds, balance }) {
                   style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    backgroundColor: 'powderblue',
-                    borderColor: 'powderblue',
+                    backgroundColor: '#99CCFF',
+                    borderColor: '#99CCFF',
                     color: 'black'
                   }}
                   onClick={startUnlockProcess}

@@ -3,18 +3,7 @@ import { ethers } from "ethers";
 import {
   PieChart, Pie, Sector, Cell, ResponsiveContainer,
 } from 'recharts';
-
-const protocolData = [
-  { name: 'Aave', value: 513.8 },
-  { name: 'Compound', value: 327.7 },
-  { name: 'Maker', value: 289.1 },
-  { name: 'PieDao', value: 11.3 },
-];
-
-const poolData = [
-  { name: 'Aave V2', value: 435.1 },
-  { name: 'Aave Gov', value: 273.3 },
-];
+import { Loading } from "./Loading";
 
 const images = {
     Aave: "/AaveLogo.png",
@@ -22,7 +11,8 @@ const images = {
     Maker: "/MakerLogo.png",
     PieDao: "/PieDaoLogo.png",
     'Aave V2': "/AaveLogo.png",
-    'Aave Gov': "/AaveLogo.png"
+    'Aave Gov': "/AaveLogo.png",
+    Yearn: "/YearnLogo.png",
   }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -34,7 +24,7 @@ const renderCustomizedLabel = ({
   const outsideRadius = innerRadius + (outerRadius - innerRadius) * 1.1;
   const outsideX = cx + outsideRadius * Math.cos(-midAngle * RADIAN);
   // adjust based on text length
-  const adjOutsideX = outsideX > cx ? outsideX - 15 : outsideX - 100;
+  const adjOutsideX = outsideX > cx ? outsideX - 15 : outsideX - 70;
   const outsideY = cy + outsideRadius * Math.sin(-midAngle * RADIAN);
   // adjust based on text length
   const adjOutsideY = outsideY > cy ? outsideY : outsideY - 20;
@@ -61,8 +51,26 @@ const renderCustomizedLabel = ({
 };
 
 export default class Charts extends PureComponent {
+  constructor(props) {
+    super(props);
 
+    this.protocolData = [
+      { name: 'Yearn', value: 5.0 },
+      { name: 'Maker', value: 7.0 },
+      { name: 'PieDao', value: 3.0 },
+    ];
+
+    this.poolData = [
+      { name: 'Aave V2', value: parseFloat(((this.props.totalPoolFunds/1000000)*.6).toFixed(0)) },
+      { name: 'Compound', value: parseFloat(((this.props.totalPoolFunds/1000000)*.4).toFixed(0)) },
+    ];
+  }
   render() {
+
+    if (!this.props.totalPoolFunds) {
+      return <Loading />;
+    }
+
     return (
     <>
       <h2 style={{ marginLeft: '13%', float: 'left' }}>Covered Protocols</h2>
@@ -70,7 +78,7 @@ export default class Charts extends PureComponent {
       <ResponsiveContainer width='99%' aspect={2.2}>
         <PieChart style={{ marginBottom: "50px" }}>
           <Pie
-            data={protocolData}
+            data={this.protocolData}
             cx="25%"
             cy="50%"
             labelLine={false}
@@ -80,7 +88,7 @@ export default class Charts extends PureComponent {
             dataKey="value"
           >
             {
-              protocolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
+              this.protocolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
             }
           </Pie>
 
@@ -89,7 +97,7 @@ export default class Charts extends PureComponent {
 
 
           <Pie
-            data={poolData}
+            data={this.poolData}
             cx="75%"
             cy="50%"
             labelLine={false}
@@ -99,19 +107,19 @@ export default class Charts extends PureComponent {
             dataKey="value"
           >
             {
-              poolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
+              this.poolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
             }
           </Pie>
         </PieChart>
       </ResponsiveContainer>
       <div style={{ marginLeft: '13%', float: 'left', whiteSpace: 'nowrap' }}>
         <h5 style={{ display: "inline-block"}}>Total Covered:</h5>
-        <span style={{ display: "inline-block", marginLeft: "10%"}}>$1.1Bn</span>
+        <span style={{ display: "inline-block", marginLeft: "10%"}}>$15M</span>
       </div>
       <div style={{ marginRight: '16%', float: 'right', whiteSpace: 'nowrap' }}>
         <h5 style={{ display: "inline-block"}}>Total Locked:</h5>
         <span style={{ display: "inline-block", marginLeft: "10%"}}>
-          ${ethers.utils.formatEther(this.props.totalStakedFunds.toString()).toString()}
+          ${(this.props.totalPoolFunds/1000000).toFixed(0).toString()}M
         </span>
       </div>
     </>

@@ -49,8 +49,8 @@ async function main() {
   const whaleDai = ethers.utils.formatEther((await daiForImp.balanceOf(DAI_WHALE)).toString());
   console.log(`DAI_WHALE balance is ${whaleDai}`);
   // This may fail sometimes, the DAI_WHALE is Binance and may have shortage of Dai
-  await daiForImp.transfer(YOUR_ADDRESS, parseEther("1000000"), { from: DAI_WHALE })
-  await daiForImp.transfer(defaultAccount.address, parseEther("1000000"), { from: DAI_WHALE })
+  await daiForImp.transfer(YOUR_ADDRESS, parseEther("3000000"), { from: DAI_WHALE })
+  await daiForImp.transfer(defaultAccount.address, parseEther("11000000"), { from: DAI_WHALE })
 
   // stop impersonating Dai whale
   await stopImpersonatingAccount(DAI_WHALE);
@@ -117,7 +117,7 @@ async function main() {
   // and preload funds into pool that aren't from us (for demo purposes)
   console.log(`insuranceaddress before owns ${await defaultDai.balanceOf(insurance.address)}`)
 
-  await stakeFunds(insurance, "50000");
+  await stakeFunds(insurance, "10000000");
   await insurance.getFunds(await defaultAccount.getAddress());
 
   console.log(`insuranceaddress after owns ${await defaultDai.balanceOf(insurance.address)}`)
@@ -126,17 +126,17 @@ async function main() {
   const protocols = [
     {
       address: "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761a0",
-      coverAmount: parseEther("10000"),
+      coverAmount: parseEther("3000000"),
       premPerBlock: onePercent,
     },
     {
       address: "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761b1",
-      coverAmount: parseEther("20000"),
+      coverAmount: parseEther("5000000"),
       premPerBlock: onePercent,
     },
     {
       address: "0x561ca898cce9f021c15a441ef41899146e923541cee724530075d1a1144761c2",
-      coverAmount: parseEther("30000"),
+      coverAmount: parseEther("7000000"),
       premPerBlock: onePercent,
     },
   ]

@@ -29,7 +29,7 @@ import { Radio, Divider, Space, Menu } from "antd";
 // to use when deploying to other networks.
 const HARDHAT_NETWORK_ID = '1337';
 
-const { parseEther } = require("ethers/lib/utils");
+const { parseEther, formatEther } = require("ethers/lib/utils");
 const erc20 = require("@studydefi/money-legos/erc20");
 
 // This is an error code that indicates that the user canceled a transaction
@@ -54,8 +54,11 @@ export class Dapp extends React.Component {
     this.initialState = {
       // The user's address and balance
       selectedAddress: undefined,
-      balance: undefined,
+      userStake: undefined,
       totalStakedFunds: undefined,
+      earningsOnStake: 0.0,
+      totalPoolFunds: undefined,
+      userTotalFunds: 0.0,
       // The ID about transactions being sent, and any possible error with them
       txBeingSent: undefined,
       transactionError: undefined,
@@ -91,13 +94,14 @@ export class Dapp extends React.Component {
       );
     }
 
-    // If the token data or the user's balance hasn't loaded yet, we show
+    // If the token data or the user's userStake hasn't loaded yet, we show
     // a loading component.
-    // console.log(`totalStakedFunds is ${!this.state.totalStakedFunds}`);
-    // console.log(`balance is ${!this.state.balance}`);
-    // console.log(`insuranceData is ${!this.state.insuranceData}`);
+    // console.log(`totalStakedFunds is ${this.state.totalStakedFunds}`);
+    // console.log(`userStake is ${this.state.userStake}`);
+    // console.log(`insuranceData is ${JSON.stringify(this.state.insuranceData)}`);
 
-    if (!this.state.balance || !this.state.insuranceData || !this.state.totalStakedFunds) {
+
+    if (!this.state.insuranceData || !this.state.totalStakedFunds) {
       return <Loading />;
     }
 
@@ -129,14 +133,17 @@ export class Dapp extends React.Component {
               stakeFunds={(amount) =>
                 this._stakeFunds(amount)
               }
-              balance={this.state.balance}
+              userStake={this.state.userStake}
+              earningsOnStake={this.state.earningsOnStake}
+              totalPoolFunds={this.state.totalPoolFunds}
+              userTotalFunds={this.state.userTotalFunds}
             />
           </>
         }
         {this.state.menuTab == "2" &&
           <>
             <Charts
-              totalStakedFunds={this.state.totalStakedFunds}
+              totalPoolFunds={this.state.totalPoolFunds}
             />
           </>
         }
@@ -146,7 +153,7 @@ export class Dapp extends React.Component {
   }
 
   componentWillUnmount() {
-    // We poll the user's balance, so we have to stop doing that when Dapp
+    // We poll the user's userStake, so we have to stop doing that when Dapp
     // gets unmounted
     this._stopPollingData();
   }
@@ -198,9 +205,9 @@ export class Dapp extends React.Component {
     });
 
     // Then, we initialize ethers, fetch the token's data, and start polling
-    // for the user's balance.
+    // for the user's userStake.
 
-    // Fetching the token data and the user's balance are specific to this
+    // Fetching the token data and the user's userStake are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
     this._startPollingData();
@@ -260,10 +267,31 @@ export class Dapp extends React.Component {
   }
 
   async _updateBalance() {
-    const balance = await this._insurance.getFunds(this.state.selectedAddress);
-    const totalStakedFunds = await this._insurance.getTotalStakedFunds();
+    const userStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
+    console.log(`userStake is ${userStake}`)
+    const totalStakedFunds = parseFloat(formatEther(await this._insurance.getTotalStakedFunds()));
 
-    this.setState({ balance, totalStakedFunds });
+    // calc'ing yield per second without using backend (need to fix)
+    const hardcodeAPY = .0746
+    const yieldPerSecond = hardcodeAPY / 365 / 24 / 60 / 60;
+
+    // calc'ing user earningsOnStake without using backend (need to fix)
+    const localEarnings = this.state.earningsOnStake ? this.state.earningsOnStake : 0.0;
+    const principalForEarnings = (userStake - this.state.userStake + localEarnings) + this.state.userStake;
+    const tempEarningsOnStake = (principalForEarnings*yieldPerSecond) + localEarnings
+    const earningsOnStake = tempEarningsOnStake ? tempEarningsOnStake : 0.0;
+
+    // calc'ing userTotalFunds without using backend (need to fix)
+    const userTotalFunds = earningsOnStake + userStake;
+
+    // calc'ing total poolBalance without using backend (need to fix)
+    const totalPoolFunds = this.state.totalPoolFunds ?
+      ((this.state.totalPoolFunds + (totalStakedFunds - this.state.totalStakedFunds)) * (1 + yieldPerSecond))
+       :
+      (totalStakedFunds * (1 + yieldPerSecond))
+
+
+    this.setState({ userStake, totalStakedFunds, earningsOnStake, totalPoolFunds, userTotalFunds });
   }
 
   async _stakeFunds(amount) {
