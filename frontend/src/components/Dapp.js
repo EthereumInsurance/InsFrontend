@@ -59,6 +59,8 @@ export class Dapp extends React.Component {
       earningsOnStake: 0.0,
       totalPoolFunds: undefined,
       userTotalFunds: 0.0,
+      protCoveredFunds: undefined,
+      totalCoveredFunds: undefined,
       // The ID about transactions being sent, and any possible error with them
       txBeingSent: undefined,
       transactionError: undefined,
@@ -101,7 +103,7 @@ export class Dapp extends React.Component {
     // console.log(`insuranceData is ${JSON.stringify(this.state.insuranceData)}`);
 
 
-    if (!this.state.insuranceData || !this.state.totalStakedFunds) {
+    if (!this.state.insuranceData || !this.state.totalStakedFunds || !this.state.protCoveredFunds) {
       return <Loading />;
     }
 
@@ -144,6 +146,8 @@ export class Dapp extends React.Component {
           <>
             <Charts
               totalPoolFunds={this.state.totalPoolFunds}
+              protCoveredFunds={this.state.protCoveredFunds}
+              totalCoveredFunds={this.state.totalCoveredFunds}
             />
           </>
         }
@@ -211,7 +215,8 @@ export class Dapp extends React.Component {
     // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
     this._startPollingData();
-    this._getInsuranceData()
+    this._getInsuranceData();
+    this._getProtocolInfo();
   }
 
   async _intializeEthers() {
@@ -226,16 +231,6 @@ export class Dapp extends React.Component {
       this._provider.getSigner(0)
     );
 
-    // const defaultAccount = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
-    // const daiABI = erc20.dai.abi;
-    // const daiAddress = erc20.dai.address;
-    // this.daiContract = await new ethers.Contract(daiAddress, daiABI, this._provider.getSigner(0));
-    // console.log(`insurance address is ${this._insurance.address}`)
-    // console.log(`this.state.selectedAddress is ${this.state.selectedAddress}`)
-    // console.log(`allowance for insurance address is ${await this.daiContract.allowance(defaultAccount, this._insurance.address)}`)
-    // this.daiContract = await new ethers.Contract(daiAddress, daiABI, this._provider.getSigner(0));
-    // await this.daiContract.approve(this._insurance.address, ethers.constants.MaxUint256);
-    // console.log(`allowance for insurance address is ${await this.daiContract.allowance(this.state.selectedAddress, this._insurance.address)}`)
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -266,10 +261,35 @@ export class Dapp extends React.Component {
     this.setState({ insuranceData: { timeLock } });
   }
 
+  async _getProtocolInfo() {
+    // need a proper getter in Insurance contract for protocols
+    // protocol info shouldn't change after initiation so putting it in _getInsuranceData
+    const numOfProtocols = 3;
+    var protAddresses = [];
+    var protCoveredFunds = [];
+    var protPremPerBlock = [];
+    for (var i = 0; i < numOfProtocols; i++) {
+      const singleProtAddress = (await this._insurance.protocols(i));
+      protAddresses.push(singleProtAddress);
+      const singleProtCoveredFunds = parseFloat(formatEther(await this._insurance.coveredFunds(singleProtAddress)));
+      protCoveredFunds.push(singleProtCoveredFunds);
+      const singleProtPremPerBlock = parseFloat(formatEther(await this._insurance.premiumPerBlock(singleProtAddress)));
+      protPremPerBlock.push(singleProtPremPerBlock);
+    }
+    const totalCoveredFunds = protCoveredFunds.reduce((a,b)=>a+b)
+    console.log(`protAddresses are ${protAddresses}` )
+    console.log(`protCoveredFunds are ${protCoveredFunds}` )
+    console.log(`protPremPerBlock are ${protPremPerBlock}` )
+    console.log(`totalCoveredFunds is ${totalCoveredFunds}`)
+
+    this.setState({ protCoveredFunds, totalCoveredFunds })
+  }
+
   async _updateBalance() {
     const userStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
-    console.log(`userStake is ${userStake}`)
     const totalStakedFunds = parseFloat(formatEther(await this._insurance.getTotalStakedFunds()));
+
+
 
     // calc'ing yield per second without using backend (need to fix)
     const hardcodeAPY = .0746

@@ -55,9 +55,9 @@ export default class Charts extends PureComponent {
     super(props);
 
     this.protocolData = [
-      { name: 'Yearn', value: 5.0 },
-      { name: 'Maker', value: 7.0 },
-      { name: 'PieDao', value: 3.0 },
+      { name: 'Yearn', value: this.props.protCoveredFunds[1]/1000000 },
+      { name: 'Maker', value: this.props.protCoveredFunds[2]/1000000 },
+      { name: 'PieDao', value: this.props.protCoveredFunds[0]/1000000 },
     ];
 
     this.poolData = [
@@ -67,7 +67,7 @@ export default class Charts extends PureComponent {
   }
   render() {
 
-    if (!this.props.totalPoolFunds) {
+    if (!this.props.totalPoolFunds || !this.props.totalCoveredFunds) {
       return <Loading />;
     }
 
@@ -114,7 +114,9 @@ export default class Charts extends PureComponent {
       </ResponsiveContainer>
       <div style={{ marginLeft: '13%', float: 'left', whiteSpace: 'nowrap' }}>
         <h5 style={{ display: "inline-block"}}>Total Covered:</h5>
-        <span style={{ display: "inline-block", marginLeft: "10%"}}>$15M</span>
+        <span style={{ display: "inline-block", marginLeft: "10%"}}>
+          ${(this.props.totalCoveredFunds/1000000).toFixed(0).toString()}M
+        </span>
       </div>
       <div style={{ marginRight: '16%', float: 'right', whiteSpace: 'nowrap' }}>
         <h5 style={{ display: "inline-block"}}>Total Locked:</h5>
