@@ -8,9 +8,8 @@ import 'antd/lib/style/themes/default.less';
 export function TwoCards({
   stakeFunds,
   userStake,
-  earningsOnStake,
+  earningsPerMonth,
   totalStakedFunds,
-  userTotalFunds,
   totalAPY,
 })
 {
@@ -110,9 +109,9 @@ export function TwoCards({
           >
             <h4 style={{textAlign:'center'}}>Your Funds</h4>
             <p style={{textAlign:'left', margin:40}}>
-              <b>Initial Stake</b>
+              <b>Earnings Per Month</b>
               <span style={{float:'right'}}>
-                ${numberWithCommas(userStake.toFixed(2))}
+                ${numberWithCommas(earningsPerMonth.toFixed(2))}
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
@@ -122,9 +121,9 @@ export function TwoCards({
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
-              <b>Total Earnings</b>
+              <b>Funds Available to Claim</b>
               <span style={{float:'right'}}>
-                ${numberWithCommas(earningsOnStake.toFixed(2))}
+                $0.00
               </span>
             </p>
             <h5 style={{textAlign:'left', margin:40}}>

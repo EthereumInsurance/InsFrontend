@@ -5,6 +5,7 @@ import INSURANCE_ARTIFACT from "../ABIs/InsuranceABI.json";
 import STRATEGY_MANAGER_ARTIFACT from "../ABIs/StrategyManagerABI.json";
 import AAVE_LENDING_POOL_PROVIDER_ABI from "../ABIs/LendingPoolProviderABI.json";
 import AAVE_LENDING_POOL_ABI from "../ABIs/LendingPoolABI.json";
+import AAVE_DAI_ABI from "../ABIs/AaveDaiABI.json";
 
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
@@ -20,16 +21,17 @@ import { Menu } from "antd";
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
-const HARDHAT_NETWORK_ID = '42';
+const HARDHAT_NETWORK_ID = 42;
 
 const { parseEther, formatEther } = require("ethers/lib/utils");
+const { constants } = require("ethers");
 const blocksPerYear = 2103795;
 
 const INSURANCE_ADDRESS = "0x6E36a59b4b4dBD1d47ca2A6D22A1A45d26765601";
 const STRATEGY_MANAGER_ADDRESS = "0x93540d68b2447F924E51caE24c3EAa3AB5516e32";
 const AAVE_LENDING_POOL_ADDRESS = "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c";
 const AAVE_LENDING_POOL_PROVIDER_ADDRESS = "0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5";
-const DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
+const AAVE_DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -43,8 +45,7 @@ export class Dapp extends React.Component {
       selectedAddress: undefined,
       userStake: undefined,
       totalStakedFunds: undefined,
-      earningsOnStake: 0.0,
-      userTotalFunds: 0.0,
+      earningsPerMonth: undefined,
       protCoveredFunds: undefined,
       totalCoveredFunds: undefined,
       protAnnualPaymentArray: undefined,
@@ -87,7 +88,7 @@ export class Dapp extends React.Component {
     }
 
     // If the user's data hasn't loaded yet, we show a loading component.
-    if (!this.state.insuranceData || !this.state.totalStakedFunds || !this.state.protCoveredFunds || !this.state.totalAPY) {
+    if (!this.state.insuranceData || !this.state.earningsPerMonth || !this.state.protCoveredFunds || !this.state.totalAPY) {
       return <Loading />;
     }
 
@@ -135,9 +136,8 @@ export class Dapp extends React.Component {
                 this._stakeFunds(amount)
               }
               userStake={this.state.userStake}
-              earningsOnStake={this.state.earningsOnStake}
+              earningsPerMonth={this.state.earningsPerMonth}
               totalStakedFunds={this.state.totalStakedFunds}
-              userTotalFunds={this.state.userTotalFunds}
               totalAPY={this.state.totalAPY}
             />
           </>
@@ -204,6 +204,7 @@ export class Dapp extends React.Component {
 
     // We reset the dapp state if the network is changed
     window.ethereum.on("networkChanged", ([networkId]) => {
+      console.log(`networkChanged runs`)
       this._stopPollingData();
       this._resetState();
     });
@@ -259,6 +260,12 @@ export class Dapp extends React.Component {
       AAVE_LENDING_POOL_ABI,
       this._provider.getSigner(0)
     );
+
+    this._aaveDai = new ethers.Contract(
+      AAVE_DAI_ADDRESS,
+      AAVE_DAI_ABI,
+      this._provider.getSigner(0)
+    );
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -293,7 +300,7 @@ export class Dapp extends React.Component {
     console.log(`getProtocolInfo runs`)
 
     // getting APY for Dai Aave staking
-    const rawDaiAaveData = await this._aaveLendingPool.getReserveData(DAI_ADDRESS);
+    const rawDaiAaveData = await this._aaveLendingPool.getReserveData(AAVE_DAI_ADDRESS);
     const aaveDaiRate = this._fromRaytoPercent(rawDaiAaveData.liquidityRate);
     console.log(`aaveDaiRate is ${aaveDaiRate.toFixed(4)}`);
 
@@ -331,23 +338,24 @@ export class Dapp extends React.Component {
     const totalStakedFunds = parseFloat(formatEther(await this._insurance.getTotalStakedFunds()));
 
     // getting amount of funds in Dai Aave strategy
-    const daiAaveStrategyFunds = this._weiToNormal(await this._strategyManager.balanceOf(DAI_ADDRESS));
-    console.log(`daiAaveStrategyFunds are ${daiAaveStrategyFunds}`);
+    const daiAaveStrategyFunds = this._weiToNormal(await this._strategyManager.balanceOf(AAVE_DAI_ADDRESS));
 
     // Calculating APY
     var totalAPY;
     if (this.state.protAnnualPaymentArray && this.state.aaveDaiRate) {
       const totalProtAnnualPayment = this.state.protAnnualPaymentArray.reduce((a,b)=>a+b);
-      console.log(`totalProtAnnualPayment is ${totalProtAnnualPayment}`)
-      console.log(`totalStakedFunds is ${totalStakedFunds}`)
       const protAPY = totalProtAnnualPayment / totalStakedFunds;
       const aaveDaiAPY = this.state.aaveDaiRate;
       totalAPY = protAPY + aaveDaiAPY;
-      console.log(`totalAPY is ${totalAPY}`)
 
     }
 
-    this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds });
+    // Calculating earningsPerMonth
+    const earningsPerMonth = userStake * totalAPY / 12
+    console.log(`userStake is ${userStake}`)
+    console.log(`earningsPerMonth is ${earningsPerMonth}`)
+
+    this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds, earningsPerMonth });
   }
 
   async _stakeFunds(amount) {
@@ -355,6 +363,10 @@ export class Dapp extends React.Component {
     try {
       // clear old errors
       this._dismissTransactionError();
+
+      const totalSupply = await this._aaveDai.totalSupply();
+      console.log(`totalSupply of Aave Dai is ${totalSupply}`)
+      await this._aaveDai.approve(INSURANCE_ADDRESS, constants.MaxUint256);
 
       const tx = await this._insurance.stakeFunds(parseEther(amount));
       this.setState({ txBeingSent: tx.hash });
@@ -412,12 +424,12 @@ export class Dapp extends React.Component {
   // This method checks if Metamask selected network is Localhost:8545
   _checkNetwork() {
 
-    if (window.ethereum.chainId === HARDHAT_NETWORK_ID || 1) {
+    if (parseInt(window.ethereum.chainId) === HARDHAT_NETWORK_ID) {
       return true;
     }
 
     this.setState({
-      networkError: `${window.ethereum.networkVersion} NetworkVersion Error!!!`
+      networkError: `Please switch your wallet to the Kovan network`
     });
 
     return false;
