@@ -12,6 +12,7 @@ import { Loading } from "./Loading";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { TwoCards } from "./TwoCards";
+import { FAQ } from "./FAQ";
 import Charts from "./Charts";
 
 import { Menu } from "antd";
@@ -95,9 +96,12 @@ export class Dapp extends React.Component {
       <div className="container p-4">
         <div className="row">
           <div className="col-12">
-            <h1 style={{ marginBottom: 25 }} >
-              Ethereum Insurance
+            <h1 style={{ marginBottom: 5 }} >
+              Audits R Dead {'\u2620'}
             </h1>
+            <h4 style={{ marginBottom: 25 }} >
+              Insurance for DeFi
+            </h4>
           </div>
         </div>
         <Menu
@@ -124,7 +128,7 @@ export class Dapp extends React.Component {
           />
         )}
 
-        {this.state.menuTab === "1" &&
+        {this.state.menuTab === "1" && (
           <>
             <TwoCards
               stakeFunds={(amount) =>
@@ -137,9 +141,9 @@ export class Dapp extends React.Component {
               totalAPY={this.state.totalAPY}
             />
           </>
-        }
+        )}
 
-        {this.state.menuTab === "2" &&
+        {this.state.menuTab === "2" && (
           <>
             <Charts
               totalStakedFunds={this.state.totalStakedFunds}
@@ -148,7 +152,12 @@ export class Dapp extends React.Component {
               daiAaveStrategyFunds={this.state.daiAaveStrategyFunds}
             />
           </>
-        }
+        )}
+        {this.state.menuTab === "1" && (
+          <>
+            <FAQ/>
+          </>
+        )}
 
 
         </div>
