@@ -55,7 +55,7 @@ export class Dapp extends React.Component {
       transactionError: undefined,
       networkError: undefined,
       insuranceData: undefined,
-      menuTab: "2",
+      menuTab: "1",
     };
 
     this.state = this.initialState;
