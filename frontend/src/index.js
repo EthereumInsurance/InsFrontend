@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Dapp } from "./components/Dapp";
-import "~antd/dist/antd.css";
+import "antd/dist/antd.css";
 
 // We import bootstrap here, but you can remove if you want
 import "bootstrap/dist/css/bootstrap.css";
