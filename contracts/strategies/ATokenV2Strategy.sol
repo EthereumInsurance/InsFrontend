@@ -50,6 +50,7 @@ contract ATokenV2Strategy is IStrategy {
     function deposit() external override {
         ILendingPool lp = getLp();
         uint256 amount = IERC20(want).balanceOf(address(this));
+        IERC20(want).approve(address(lp), amount);
         lp.deposit(want, amount, address(this), 0);
     }
 
@@ -60,10 +61,13 @@ contract ATokenV2Strategy is IStrategy {
         returns (uint256)
     {
         ILendingPool lp = getLp();
+        if (balanceOf() == 0) {
+            return 0;
+        }
         return lp.withdraw(want, uint256(-1), msg.sender);
     }
 
-    function withdraw(uint256 _amount) public override onlyStrategyManager {
+    function withdraw(uint256 _amount) external override onlyStrategyManager {
         ILendingPool lp = getLp();
         lp.withdraw(want, _amount, msg.sender);
     }
@@ -73,7 +77,7 @@ contract ATokenV2Strategy is IStrategy {
         token.safeTransfer(msg.sender, token.balanceOf(address(this)));
     }
 
-    function balanceOf() external override view returns (uint256) {
+    function balanceOf() public override view returns (uint256) {
         // no `want` balance in this contract
         // Aave has 1 to 1 ratio
         return IERC20(aWant).balanceOf(address(this));

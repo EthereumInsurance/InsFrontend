@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { ethers } from "ethers";
-import { Card, Col, Row, InputNumber, Select, Button, Space } from "antd";
+import { Card, Row, InputNumber, Select, Button, Space } from "antd";
 import 'antd/dist/antd.css';
 import './index.css';
 import 'antd/lib/style/themes/default.less';
@@ -10,8 +9,9 @@ export function TwoCards({
   stakeFunds,
   userStake,
   earningsOnStake,
-  totalPoolFunds,
-  userTotalFunds
+  totalStakedFunds,
+  userTotalFunds,
+  totalAPY,
 })
 {
 
@@ -61,13 +61,13 @@ export function TwoCards({
             <p style={{textAlign:'left', margin:40}}>
               <b>Current APY</b>
               <span style={{float:'right'}}>
-                7.46%
+                {(totalAPY*100).toFixed(2)}%
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
               <b>Pool Size</b>
               <span style={{float:'right'}}>
-                ${numberWithCommas(totalPoolFunds.toFixed(2))}
+                ${numberWithCommas(totalStakedFunds.toFixed(2))}
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
@@ -78,7 +78,7 @@ export function TwoCards({
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 25}}>
               <InputNumber style={{ height: 32 }} min={0} defaultValue={0} onChange={handleNumberChange} />
-              <Select defaultValue="DAI" style={{ width: 75}} onChange={handleTokenChange}>
+              <Select defaultValue={stakeToken} style={{ width: 75}} onChange={handleTokenChange}>
                 <Option value="DAI">DAI</Option>
                 <Option value="ETH">ETH</Option>
               </Select>
@@ -118,7 +118,7 @@ export function TwoCards({
             <p style={{textAlign:'left', margin:40}}>
               <b>Current APY</b>
               <span style={{float:'right'}}>
-                7.46%
+                {(totalAPY*100).toFixed(2)}%
               </span>
             </p>
             <p style={{textAlign:'left', margin:40}}>
@@ -130,7 +130,7 @@ export function TwoCards({
             <h5 style={{textAlign:'left', margin:40}}>
               <b>Total Funds</b>
               <span style={{float:'right'}}>
-                ${numberWithCommas(userTotalFunds.toFixed(2))}
+                ${numberWithCommas(userStake.toFixed(2))}
               </span>
             </h5>
             <div style={{ display: 'flex', justifyContent: 'center'}}>
@@ -152,28 +152,18 @@ export function TwoCards({
               {unlockStarted&&
                 <>
                   <Space direction="vertical">
-                    <p
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                      }}
-                    >
+                    <p style={{ display: 'flex', justifyContent: 'center', }}>
                       72 hours remaining
                     </p>
                     <Button
                       type="danger"
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        color: 'black',
-                      }}
+                      style={{ display: 'flex', justifyContent: 'center', color: 'black',}}
                       onClick={cancelUnlockProcess}
                     >
                       Cancel Unlock
                     </Button>
                   </Space>
                 </>
-
               }
 
             </div>

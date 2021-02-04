@@ -1,72 +1,61 @@
-// TODO: update React to useState, etc.
 import React from "react";
 import { ethers } from "ethers";
 
-import InsuranceArtifact from "../contracts/Insurance.json";
-import insuranceAddress from "../contracts/Insurance-address.json";
-import StakeArtifact from "../contracts/Stake.json";
-import stakeAddress from "../contracts/Stake-address.json";
-import StrategyManagerArtifact from "../contracts/StrategyManager.json";
-import strategyManagerAddress from "../contracts/StrategyManager-address.json";
+import INSURANCE_ARTIFACT from "../ABIs/InsuranceABI.json";
+import STRATEGY_MANAGER_ARTIFACT from "../ABIs/StrategyManagerABI.json";
+import AAVE_LENDING_POOL_PROVIDER_ABI from "../ABIs/LendingPoolProviderABI.json";
+import AAVE_LENDING_POOL_ABI from "../ABIs/LendingPoolABI.json";
 
-// All the logic of this dapp is contained in the Dapp component.
-// These other components are just presentational ones: they don't have any
-// logic. They just render HTML.
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
-import { Transfer } from "./Transfer";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
-import { NoTokensMessage } from "./NoTokensMessage";
 import { TwoCards } from "./TwoCards";
 import Charts from "./Charts";
 
-import { Radio, Divider, Space, Menu } from "antd";
+import { Menu } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
-const HARDHAT_NETWORK_ID = '1337';
+const HARDHAT_NETWORK_ID = '42';
 
 const { parseEther, formatEther } = require("ethers/lib/utils");
-const erc20 = require("@studydefi/money-legos/erc20");
+const blocksPerYear = 2103795;
+
+const INSURANCE_ADDRESS = "0x6E36a59b4b4dBD1d47ca2A6D22A1A45d26765601";
+const STRATEGY_MANAGER_ADDRESS = "0x93540d68b2447F924E51caE24c3EAa3AB5516e32";
+const AAVE_LENDING_POOL_ADDRESS = "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c";
+const AAVE_LENDING_POOL_PROVIDER_ADDRESS = "0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5";
+const DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
-// This component is in charge of doing these things:
-//   1. It connects to the user's wallet
-//   2. Initializes ethers and the Token contract
-//   3. Polls the user balance to keep it updated.
-//   4. Transfers tokens by sending transactions
-//   5. Renders the whole application
-//
-// Note that (3) and (4) are specific of this sample application, but they show
-// you how to keep your Dapp and contract's state in sync,  and how to send a
-// transaction.
 export class Dapp extends React.Component {
   constructor(props) {
     super(props);
 
-    // We store multiple things in Dapp's state.
-    // You don't need to follow this pattern, but it's a useful example.
     this.initialState = {
       // The user's address and balance
       selectedAddress: undefined,
       userStake: undefined,
       totalStakedFunds: undefined,
       earningsOnStake: 0.0,
-      totalPoolFunds: undefined,
       userTotalFunds: 0.0,
       protCoveredFunds: undefined,
       totalCoveredFunds: undefined,
+      protAnnualPaymentArray: undefined,
+      aaveDaiRate: undefined,
+      totalAPY: undefined,
+      daiAaveStrategyFunds: undefined,
       // The ID about transactions being sent, and any possible error with them
       txBeingSent: undefined,
       transactionError: undefined,
       networkError: undefined,
       insuranceData: undefined,
-      menuTab: "1",
+      menuTab: "2",
     };
 
     this.state = this.initialState;
@@ -96,14 +85,8 @@ export class Dapp extends React.Component {
       );
     }
 
-    // If the token data or the user's userStake hasn't loaded yet, we show
-    // a loading component.
-    // console.log(`totalStakedFunds is ${this.state.totalStakedFunds}`);
-    // console.log(`userStake is ${this.state.userStake}`);
-    // console.log(`insuranceData is ${JSON.stringify(this.state.insuranceData)}`);
-
-
-    if (!this.state.insuranceData || !this.state.totalStakedFunds || !this.state.protCoveredFunds) {
+    // If the user's data hasn't loaded yet, we show a loading component.
+    if (!this.state.insuranceData || !this.state.totalStakedFunds || !this.state.protCoveredFunds || !this.state.totalAPY) {
       return <Loading />;
     }
 
@@ -129,7 +112,19 @@ export class Dapp extends React.Component {
             Allocations
           </Menu.Item>
         </Menu>
-        {this.state.menuTab == "1" &&
+
+        {this.state.txBeingSent && (
+          <WaitingForTransactionMessage txHash={this.state.txBeingSent} />
+        )}
+
+        {this.state.transactionError && (
+          <TransactionErrorMessage
+            message={this._getRpcErrorMessage(this.state.transactionError)}
+            dismiss={() => this._dismissTransactionError()}
+          />
+        )}
+
+        {this.state.menuTab === "1" &&
           <>
             <TwoCards
               stakeFunds={(amount) =>
@@ -137,20 +132,24 @@ export class Dapp extends React.Component {
               }
               userStake={this.state.userStake}
               earningsOnStake={this.state.earningsOnStake}
-              totalPoolFunds={this.state.totalPoolFunds}
+              totalStakedFunds={this.state.totalStakedFunds}
               userTotalFunds={this.state.userTotalFunds}
+              totalAPY={this.state.totalAPY}
             />
           </>
         }
-        {this.state.menuTab == "2" &&
+
+        {this.state.menuTab === "2" &&
           <>
             <Charts
-              totalPoolFunds={this.state.totalPoolFunds}
+              totalStakedFunds={this.state.totalStakedFunds}
               protCoveredFunds={this.state.protCoveredFunds}
               totalCoveredFunds={this.state.totalCoveredFunds}
+              daiAaveStrategyFunds={this.state.daiAaveStrategyFunds}
             />
           </>
         }
+
 
         </div>
     );
@@ -163,6 +162,7 @@ export class Dapp extends React.Component {
   }
 
   async _connectWallet() {
+    console.log(`connectWallet runs`)
     // This method is run when the user clicks the Connect. It connects the
     // dapp to the user's wallet, and initializes it.
 
@@ -213,24 +213,43 @@ export class Dapp extends React.Component {
 
     // Fetching the token data and the user's userStake are specific to this
     // sample project, but you can reuse the same initialization pattern.
-    this._intializeEthers();
+    this._initializeEthers();
     this._startPollingData();
     this._getInsuranceData();
     this._getProtocolInfo();
   }
 
-  async _intializeEthers() {
+  async _initializeEthers() {
+    console.log(`initializeEthers runs`)
     // We first initialize ethers by creating a provider using window.ethereum
     this._provider = new ethers.providers.Web3Provider(window.ethereum);
+    console.log(`provider has been set in _initializeEthers and is ${JSON.stringify(this._provider)}`)
 
     // When, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
     this._insurance = new ethers.Contract(
-      insuranceAddress.Insurance,
-      InsuranceArtifact.abi,
+      INSURANCE_ADDRESS,
+      INSURANCE_ARTIFACT.abi,
       this._provider.getSigner(0)
     );
 
+    this._strategyManager = new ethers.Contract(
+      STRATEGY_MANAGER_ADDRESS,
+      STRATEGY_MANAGER_ARTIFACT.abi,
+      this._provider.getSigner(0)
+    );
+
+    this._aaveLendingPoolProvider = new ethers.Contract(
+      AAVE_LENDING_POOL_PROVIDER_ADDRESS,
+      AAVE_LENDING_POOL_PROVIDER_ABI,
+      this._provider.getSigner(0)
+    );
+
+    this._aaveLendingPool = new ethers.Contract(
+      AAVE_LENDING_POOL_ADDRESS,
+      AAVE_LENDING_POOL_ABI,
+      this._provider.getSigner(0)
+    );
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -262,56 +281,64 @@ export class Dapp extends React.Component {
   }
 
   async _getProtocolInfo() {
+    console.log(`getProtocolInfo runs`)
+
+    // getting APY for Dai Aave staking
+    const rawDaiAaveData = await this._aaveLendingPool.getReserveData(DAI_ADDRESS);
+    const aaveDaiRate = this._fromRaytoPercent(rawDaiAaveData.liquidityRate);
+    console.log(`aaveDaiRate is ${aaveDaiRate.toFixed(4)}`);
+
+
     // need a proper getter in Insurance contract for protocols
-    // protocol info shouldn't change after initiation so putting it in _getInsuranceData
-    const numOfProtocols = 3;
+    // protocol info shouldn't change after initiation so putting it in _getProtocolInfo
+    const numOfProtocols = await this._insurance.amountOfProtocolsCovered();
+    // const numOfProtocols = 3;
+    console.log(`numOfProtocols from contract is ${numOfProtocols}`)
     var protAddresses = [];
     var protCoveredFunds = [];
-    var protPremPerBlock = [];
+    var protAnnualPaymentArray = [];
+    // looping through each protocol and populating data for frontend
     for (var i = 0; i < numOfProtocols; i++) {
       const singleProtAddress = (await this._insurance.protocols(i));
       protAddresses.push(singleProtAddress);
       const singleProtCoveredFunds = parseFloat(formatEther(await this._insurance.coveredFunds(singleProtAddress)));
       protCoveredFunds.push(singleProtCoveredFunds);
-      const singleProtPremPerBlock = parseFloat(formatEther(await this._insurance.premiumPerBlock(singleProtAddress)));
-      protPremPerBlock.push(singleProtPremPerBlock);
+      const singleProtPremPerBlock = await this._insurance.premiumPerBlock(singleProtAddress);
+      const singleProtAnnualPayment = this._weiToNormal(singleProtPremPerBlock*blocksPerYear);
+      protAnnualPaymentArray.push(singleProtAnnualPayment);
     }
-    const totalCoveredFunds = protCoveredFunds.reduce((a,b)=>a+b)
+    const totalCoveredFunds = protCoveredFunds.reduce((a,b)=>a+b);
+
     console.log(`protAddresses are ${protAddresses}` )
     console.log(`protCoveredFunds are ${protCoveredFunds}` )
-    console.log(`protPremPerBlock are ${protPremPerBlock}` )
-    console.log(`totalCoveredFunds is ${totalCoveredFunds}`)
+    console.log(`protAnnualPaymentArray is ${protAnnualPaymentArray}` )
+    console.log(`totalCoveredFunds is ${totalCoveredFunds}` )
 
-    this.setState({ protCoveredFunds, totalCoveredFunds })
+    this.setState({ protCoveredFunds, totalCoveredFunds, protAnnualPaymentArray, aaveDaiRate })
   }
 
   async _updateBalance() {
     const userStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
     const totalStakedFunds = parseFloat(formatEther(await this._insurance.getTotalStakedFunds()));
 
+    // getting amount of funds in Dai Aave strategy
+    const daiAaveStrategyFunds = this._weiToNormal(await this._strategyManager.balanceOf(DAI_ADDRESS));
+    console.log(`daiAaveStrategyFunds are ${daiAaveStrategyFunds}`);
 
+    // Calculating APY
+    var totalAPY;
+    if (this.state.protAnnualPaymentArray && this.state.aaveDaiRate) {
+      const totalProtAnnualPayment = this.state.protAnnualPaymentArray.reduce((a,b)=>a+b);
+      console.log(`totalProtAnnualPayment is ${totalProtAnnualPayment}`)
+      console.log(`totalStakedFunds is ${totalStakedFunds}`)
+      const protAPY = totalProtAnnualPayment / totalStakedFunds;
+      const aaveDaiAPY = this.state.aaveDaiRate;
+      totalAPY = protAPY + aaveDaiAPY;
+      console.log(`totalAPY is ${totalAPY}`)
 
-    // calc'ing yield per second without using backend (need to fix)
-    const hardcodeAPY = .0746
-    const yieldPerSecond = hardcodeAPY / 365 / 24 / 60 / 60;
+    }
 
-    // calc'ing user earningsOnStake without using backend (need to fix)
-    const localEarnings = this.state.earningsOnStake ? this.state.earningsOnStake : 0.0;
-    const principalForEarnings = (userStake - this.state.userStake + localEarnings) + this.state.userStake;
-    const tempEarningsOnStake = (principalForEarnings*yieldPerSecond) + localEarnings
-    const earningsOnStake = tempEarningsOnStake ? tempEarningsOnStake : 0.0;
-
-    // calc'ing userTotalFunds without using backend (need to fix)
-    const userTotalFunds = earningsOnStake + userStake;
-
-    // calc'ing total poolBalance without using backend (need to fix)
-    const totalPoolFunds = this.state.totalPoolFunds ?
-      ((this.state.totalPoolFunds + (totalStakedFunds - this.state.totalStakedFunds)) * (1 + yieldPerSecond))
-       :
-      (totalStakedFunds * (1 + yieldPerSecond))
-
-
-    this.setState({ userStake, totalStakedFunds, earningsOnStake, totalPoolFunds, userTotalFunds });
+    this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds });
   }
 
   async _stakeFunds(amount) {
@@ -327,6 +354,8 @@ export class Dapp extends React.Component {
       if (receipt.status === 0) {
         throw new Error("Transaction failed");
       }
+
+      await this._updateBalance();
 
     } catch (error) {
       // We check the error code to see if this error was produced because the
@@ -389,5 +418,13 @@ export class Dapp extends React.Component {
     console.log(`set to ${event.key}`)
     this.setState({ menuTab: event.key });
 
+  }
+
+  _fromRaytoPercent(num) {
+    return num / (Math.pow(10, 27))
+  }
+
+  _weiToNormal(num) {
+    return num / (Math.pow(10, 18))
   }
 }

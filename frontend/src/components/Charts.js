@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
-import { ethers } from "ethers";
 import {
-  PieChart, Pie, Sector, Cell, ResponsiveContainer,
+  PieChart, Pie, Cell, ResponsiveContainer,
 } from 'recharts';
 import { Loading } from "./Loading";
 
@@ -24,7 +23,7 @@ const renderCustomizedLabel = ({
   const outsideRadius = innerRadius + (outerRadius - innerRadius) * 1.1;
   const outsideX = cx + outsideRadius * Math.cos(-midAngle * RADIAN);
   // adjust based on text length
-  const adjOutsideX = outsideX > cx ? outsideX - 15 : outsideX - 70;
+  const adjOutsideX = outsideX > cx ? outsideX - 15 : outsideX - 72;
   const outsideY = cy + outsideRadius * Math.sin(-midAngle * RADIAN);
   // adjust based on text length
   const adjOutsideY = outsideY > cy ? outsideY : outsideY - 20;
@@ -37,7 +36,7 @@ const renderCustomizedLabel = ({
       <foreignObject x={adjOutsideX} y={adjOutsideY} width={500} height={500}>
         <div display="flex" alignitems="center" flexdirection="row">
           <div xmlns="http://www.w3.org/1999/xhtml">
-            <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} alt="image" />
+            <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} alt="logo" />
             {` ${name}`}
           </div>
         </div>
@@ -61,13 +60,13 @@ export default class Charts extends PureComponent {
     ];
 
     this.poolData = [
-      { name: 'Aave V2', value: parseFloat(((this.props.totalPoolFunds/1000000)*.6).toFixed(0)) },
-      { name: 'Compound', value: parseFloat(((this.props.totalPoolFunds/1000000)*.4).toFixed(0)) },
+      { name: 'Aave V2', value: parseFloat((this.props.daiAaveStrategyFunds/1000000).toFixed(0)) },
+      { name: 'Aave Gov', value: parseFloat(((this.props.totalStakedFunds-this.props.daiAaveStrategyFunds)/1000000).toFixed(0)) },
     ];
   }
   render() {
 
-    if (!this.props.totalPoolFunds || !this.props.totalCoveredFunds) {
+    if (!this.props.totalStakedFunds || !this.props.totalCoveredFunds) {
       return <Loading />;
     }
 
@@ -83,7 +82,7 @@ export default class Charts extends PureComponent {
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="75%"
+            outerRadius="70%"
             fill="#8884d8"
             dataKey="value"
           >
@@ -102,7 +101,7 @@ export default class Charts extends PureComponent {
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="75%"
+            outerRadius="70%"
             fill="#8884d8"
             dataKey="value"
           >
@@ -121,7 +120,7 @@ export default class Charts extends PureComponent {
       <div style={{ marginRight: '16%', float: 'right', whiteSpace: 'nowrap' }}>
         <h5 style={{ display: "inline-block"}}>Total Locked:</h5>
         <span style={{ display: "inline-block", marginLeft: "10%"}}>
-          ${(this.props.totalPoolFunds/1000000).toFixed(0).toString()}M
+          ${(this.props.totalStakedFunds/1000000).toFixed(0).toString()}M
         </span>
       </div>
     </>

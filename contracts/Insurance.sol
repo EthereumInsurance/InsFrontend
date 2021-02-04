@@ -56,6 +56,10 @@ contract Insurance is IPool, Ownable {
         strategyManager = IStrategyManager(_strategyManager);
     }
 
+    function amountOfProtocolsCovered() public view returns (uint256) {
+        return protocols.length;
+    }
+
     function getTotalStakedFunds() public view returns (uint256) {
         return totalStakedFunds.add(strategyManager.balanceOfNative());
     }
@@ -196,7 +200,6 @@ contract Insurance is IPool, Ownable {
         }
         totalStakedFunds = totalStakedFunds.add(_amount);
         stakeToken.mint(msg.sender, stake);
-
         if (redirectStakeToStrategy) {
             _depositStrategyManager(_amount);
         }
