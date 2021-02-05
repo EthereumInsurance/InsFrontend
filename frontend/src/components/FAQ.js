@@ -21,7 +21,7 @@ export function FAQ() {
 
   return (
     <>
-      <h1 style={{textAlign:'center', marginTop: 60 }}><b>FAQ</b></h1>
+      <h1 style={{textAlign:'center', marginTop: 30 }}><b>FAQ</b></h1>
       <Collapse defaultActiveKey={['1']} ghost>
         <Panel header=<b>{q1}</b> key="1" style={{fontSize: 16}}>
           <p>{a1}</p>

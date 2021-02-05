@@ -8,7 +8,7 @@ const { utils } = require("ethers");
 const images = {
     Aave: "/AaveLogo.png",
     Compound: "/CompoundLogo.png",
-    Maker: "/MakerLogo.png",
+    Maker: "/MakerLogo.jpg",
     PieDao: "/PieDaoLogo.png",
     'Aave V2': "/AaveLogo.png",
     'Aave Gov': "/AaveLogo.png",
@@ -39,7 +39,7 @@ const renderCustomizedLabel = ({
       <foreignObject x={adjOutsideX} y={adjOutsideY} width={500} height={500}>
         <div display="flex" alignitems="center" flexdirection="row">
           <div xmlns="http://www.w3.org/1999/xhtml">
-            <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} alt="logo" />
+            <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} width="22px" height="22px" alt="logo" />
             {` ${name}`}
           </div>
         </div>
@@ -81,7 +81,7 @@ export default class Charts extends PureComponent {
     <>
       <h2 style={{ marginLeft: '15%', float: 'left', fontSize: '2vw' }}>Covered Protocols</h2>
       <h2 style={{ marginRight: '18.5%', float: 'right', fontSize: '2vw' }}>Pool Strategies</h2>
-      <ResponsiveContainer width='99%' aspect={2.2}>
+      <ResponsiveContainer width='99%' aspect={2.5}>
         <PieChart style={{ marginBottom: "10px" }}>
           <Pie
             data={this.protocolData}
