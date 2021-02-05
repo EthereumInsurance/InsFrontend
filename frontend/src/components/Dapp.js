@@ -25,7 +25,8 @@ const HARDHAT_NETWORK_ID = 42;
 
 const { parseEther, formatEther } = require("ethers/lib/utils");
 const { constants } = require("ethers");
-const blocksPerYear = 2103795;
+// Assuming 11 blocks per minute on Kovan
+const blocksPerYear = 11 * 60 * 24 * 365;
 
 const INSURANCE_ADDRESS = "0x6E36a59b4b4dBD1d47ca2A6D22A1A45d26765601";
 const STRATEGY_MANAGER_ADDRESS = "0x93540d68b2447F924E51caE24c3EAa3AB5516e32";
@@ -321,7 +322,7 @@ export class Dapp extends React.Component {
   async _getUnlockData() {
     const rawTimeLock = await this._insurance.timeLock();
     // translating from blocks to days
-    const timeLock = Math.round(rawTimeLock / 24 / 60 / 4)
+    const timeLock = Math.round(rawTimeLock / 24 / 60 / 11)
 
     var timeLeftForUnlock = undefined;
     var fundsForUnlock = undefined;
@@ -339,7 +340,7 @@ export class Dapp extends React.Component {
         console.log(`currentBlock is ${currentBlock}`)
         console.log(`withdrawStartBlock is ${withdrawStartBlock}`)
         console.log(`rawTimeLock is ${rawTimeLock}`)
-        timeLeftForUnlock = Math.round((((withdrawStartBlock*1) + (rawTimeLock*1)) - (currentBlock*1)) / 60 / 4);
+        timeLeftForUnlock = Math.round((((withdrawStartBlock*1) + (rawTimeLock*1)) - (currentBlock*1)) / 60 / 11);
       }
     }
     console.log(`timeLeftForUnlock is ${timeLeftForUnlock}`)
