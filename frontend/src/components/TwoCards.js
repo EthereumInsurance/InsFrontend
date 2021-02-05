@@ -6,7 +6,9 @@ import 'antd/lib/style/themes/default.less';
 
 
 export function TwoCards({
+  approveStakeFunds,
   stakeFunds,
+  approveWithdrawStake,
   withdrawStake,
   cancelWithdraw,
   claimFunds,
@@ -50,22 +52,41 @@ export function TwoCards({
     console.log(`new Token to stake: ${value}`);
   };
 
-  const handleStake = () => {
+  const handleStake = async () => {
     if (stakeAmount > 0) {
-      stakeFunds(stakeAmount.toString())
+      const approvalStatus = await approveStakeFunds();
+      if (approvalStatus === "success") {
+        await stakeFunds(stakeAmount.toString());
+      }
     }
   };
 
-  const startUnlockProcess = () => {
-    withdrawStake().then(setUnlockState("1"))
+  const startUnlockProcess = async () => {
+    const approvalStatus = await approveWithdrawStake();
+    if (approvalStatus === "success") {
+      const withdrawStatus = await withdrawStake();
+      if (withdrawStatus === "success") {
+        setUnlockState("1")
+      } else {
+        setUnlockState("0")
+      }
+    } else {
+      setUnlockState("0")
+    }
   };
 
-  const cancelUnlockProcess = () => {
-    cancelWithdraw().then(setUnlockState("0"))
+  const cancelUnlockProcess = async () => {
+    const cancelStatus = await cancelWithdraw();
+    if (cancelStatus === "success") {
+      setUnlockState("0");
+    }
   };
 
-  const claimFundsProcess = () => {
-    claimFunds().then(setUnlockState("0"))
+  const claimFundsProcess = async () => {
+    const claimFundsStatus = await claimFunds();
+    if (claimFundsStatus === "success") {
+      setUnlockState("0");
+    }
   }
 
   function numberWithCommas(x) {
@@ -103,7 +124,6 @@ export function TwoCards({
               <InputNumber style={{ height: 32 }} min={0} defaultValue={0} onChange={handleNumberChange} />
               <Select defaultValue={stakeToken} style={{ width: 75}} onChange={handleTokenChange}>
                 <Option value="DAI">DAI</Option>
-                <Option value="ETH">ETH</Option>
               </Select>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center'}}>

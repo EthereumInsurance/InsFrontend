@@ -3,6 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from 'recharts';
 import { Loading } from "./Loading";
+const { utils } = require("ethers");
 
 const images = {
     Aave: "/AaveLogo.png",
@@ -14,7 +15,9 @@ const images = {
     Yearn: "/YearnLogo.png",
   }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COVERED_COLORS = ['#0088FE', '#00C49F', '#cb1a8f'];
+const POOL_COLORS = ['#2ebac6', '#b6509e'];
+
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
@@ -23,10 +26,10 @@ const renderCustomizedLabel = ({
   const outsideRadius = innerRadius + (outerRadius - innerRadius) * 1.1;
   const outsideX = cx + outsideRadius * Math.cos(-midAngle * RADIAN);
   // adjust based on text length
-  const adjOutsideX = outsideX > cx ? outsideX - 15 : outsideX - 72;
+  const adjOutsideX = outsideX > cx ? outsideX - 0 : outsideX - 85;
   const outsideY = cy + outsideRadius * Math.sin(-midAngle * RADIAN);
   // adjust based on text length
-  const adjOutsideY = outsideY > cy ? outsideY : outsideY - 20;
+  const adjOutsideY = outsideY > cy ? outsideY -20 : outsideY - 20;
   const insideRadius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const insideX = cx + insideRadius * Math.cos(-midAngle * RADIAN);
   const insideY = cy + insideRadius * Math.sin(-midAngle * RADIAN);
@@ -53,10 +56,14 @@ export default class Charts extends PureComponent {
   constructor(props) {
     super(props);
 
+    const yearnCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.yearn")];
+    const makerCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.maker")];
+    const pieDaoCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.piedao")];
+
     this.protocolData = [
-      { name: 'Yearn', value: this.props.protCoveredFunds[1]/1000000 },
-      { name: 'Maker', value: this.props.protCoveredFunds[2]/1000000 },
-      { name: 'PieDao', value: this.props.protCoveredFunds[0]/1000000 },
+      { name: 'Yearn', value: yearnCoveredFunds/1000000 },
+      { name: 'Maker', value: makerCoveredFunds/1000000 },
+      { name: 'PieDao', value: pieDaoCoveredFunds/1000000 },
     ];
 
     this.poolData = [
@@ -72,22 +79,22 @@ export default class Charts extends PureComponent {
 
     return (
     <>
-      <h2 style={{ marginLeft: '13%', float: 'left' }}>Covered Protocols</h2>
-      <h2 style={{ marginRight: '16%', float: 'right' }}>Pool Strategies</h2>
+      <h2 style={{ marginLeft: '14%', float: 'left', fontSize: '2vw' }}>Covered Protocols</h2>
+      <h2 style={{ marginRight: '18%', float: 'right', fontSize: '2vw' }}>Pool Strategies</h2>
       <ResponsiveContainer width='99%' aspect={2.2}>
-        <PieChart style={{ marginBottom: "50px" }}>
+        <PieChart style={{ marginBottom: "35px" }}>
           <Pie
             data={this.protocolData}
             cx="25%"
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="70%"
+            outerRadius="67%"
             fill="#8884d8"
             dataKey="value"
           >
             {
-              this.protocolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
+              this.protocolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COVERED_COLORS[index % COVERED_COLORS.length]} />)
             }
           </Pie>
 
@@ -101,28 +108,18 @@ export default class Charts extends PureComponent {
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="70%"
+            outerRadius="67%"
             fill="#8884d8"
             dataKey="value"
           >
             {
-              this.poolData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
+              this.poolData.map((entry, index) => <Cell key={`cell-${index}`} fill={POOL_COLORS[index % POOL_COLORS.length]} />)
             }
           </Pie>
         </PieChart>
       </ResponsiveContainer>
-      <div style={{ marginLeft: '13%', float: 'left', whiteSpace: 'nowrap' }}>
-        <h5 style={{ display: "inline-block"}}>Total Covered:</h5>
-        <span style={{ display: "inline-block", marginLeft: "10%"}}>
-          ${(this.props.totalCoveredFunds/1000000).toFixed(0).toString()}M
-        </span>
-      </div>
-      <div style={{ marginRight: '16%', float: 'right', whiteSpace: 'nowrap' }}>
-        <h5 style={{ display: "inline-block"}}>Total Locked:</h5>
-        <span style={{ display: "inline-block", marginLeft: "10%"}}>
-          ${(this.props.totalStakedFunds/1000000).toFixed(0).toString()}M
-        </span>
-      </div>
+      <h2 style={{ marginLeft: '15%', float: 'left', fontSize: '1.5vw' }}>Total Covered: ${(this.props.totalCoveredFunds/1000000).toFixed(0).toString()}M</h2>
+      <h2 style={{ marginRight: '17.5%', float: 'right', fontSize: '1.5vw' }}>Total Locked: ${(this.props.totalStakedFunds/1000000).toFixed(0).toString()}M</h2>
     </>
     );
   }

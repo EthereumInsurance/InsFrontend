@@ -48,7 +48,7 @@ export class Dapp extends React.Component {
       userStake: undefined,
       totalStakedFunds: undefined,
       earningsPerMonth: undefined,
-      protCoveredFunds: undefined,
+      protCoveredFundsObj: undefined,
       totalCoveredFunds: undefined,
       protAnnualPaymentArray: undefined,
       aaveDaiRate: undefined,
@@ -92,11 +92,11 @@ export class Dapp extends React.Component {
     }
 
     // console.log(`timeLock is ${this.state.timeLock}`)
-    // console.log(`protCoveredFunds is ${this.state.protCoveredFunds}`)
+    // console.log(`protCoveredFundsObj is ${this.state.protCoveredFundsObj}`)
     // console.log(`totalAPY is ${this.state.totalAPY}`)
 
     // If the user's data hasn't loaded yet, we show a loading component.
-    if (!this.state.timeLock || !this.state.protCoveredFunds || !this.state.totalAPY) {
+    if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
       return <Loading />;
     }
 
@@ -140,17 +140,23 @@ export class Dapp extends React.Component {
         {this.state.menuTab === "1" && (
           <>
             <TwoCards
-              stakeFunds={(amount) =>
-                this._stakeFunds(amount)
+              approveStakeFunds={async () =>
+                await this._approveStakeFunds()
               }
-              withdrawStake={() =>
-                this._withdrawStake()
+              stakeFunds={async (amount) =>
+                await this._stakeFunds(amount)
               }
-              cancelWithdraw={() =>
-                this._cancelWithdraw()
+              approveWithdrawStake={async () =>
+                await this._approveWithdrawStake()
               }
-              claimFunds={() =>
-                this._claimFunds()
+              withdrawStake={async () =>
+                await this._withdrawStake()
+              }
+              cancelWithdraw={async () =>
+                await this._cancelWithdraw()
+              }
+              claimFunds={async () =>
+                await this._claimFunds()
               }
               userStake={this.state.userStake}
               earningsPerMonth={this.state.earningsPerMonth}
@@ -167,7 +173,7 @@ export class Dapp extends React.Component {
           <>
             <Charts
               totalStakedFunds={this.state.totalStakedFunds}
-              protCoveredFunds={this.state.protCoveredFunds}
+              protCoveredFundsObj={this.state.protCoveredFundsObj}
               totalCoveredFunds={this.state.totalCoveredFunds}
               daiAaveStrategyFunds={this.state.daiAaveStrategyFunds}
             />
@@ -352,26 +358,27 @@ export class Dapp extends React.Component {
     const numOfProtocols = await this._insurance.amountOfProtocolsCovered();
     // const numOfProtocols = 3;
     var protAddresses = [];
-    var protCoveredFunds = [];
+    var protCoveredFundsObj = {};
     var protAnnualPaymentArray = [];
     // looping through each protocol and populating data for frontend
     for (var i = 0; i < numOfProtocols; i++) {
       const singleProtAddress = (await this._insurance.protocols(i));
       protAddresses.push(singleProtAddress);
       const singleProtCoveredFunds = parseFloat(formatEther(await this._insurance.coveredFunds(singleProtAddress)));
-      protCoveredFunds.push(singleProtCoveredFunds);
+      protCoveredFundsObj[singleProtAddress] = singleProtCoveredFunds;
       const singleProtPremPerBlock = await this._insurance.premiumPerBlock(singleProtAddress);
       const singleProtAnnualPayment = this._weiToNormal(singleProtPremPerBlock*blocksPerYear);
       protAnnualPaymentArray.push(singleProtAnnualPayment);
     }
-    const totalCoveredFunds = protCoveredFunds.reduce((a,b)=>a+b);
+    // this adds up all the values in the protCoveredFundsObj object
+    const totalCoveredFunds = Object.keys(protCoveredFundsObj).reduce((sum,key)=>sum+parseFloat(protCoveredFundsObj[key]||0),0);
 
     console.log(`protAddresses are ${protAddresses}` )
-    console.log(`protCoveredFunds are ${protCoveredFunds}` )
+    console.log(`protCoveredFundsObj is ${protCoveredFundsObj}` )
     console.log(`protAnnualPaymentArray is ${protAnnualPaymentArray}` )
     console.log(`totalCoveredFunds is ${totalCoveredFunds}` )
 
-    this.setState({ protCoveredFunds, totalCoveredFunds, protAnnualPaymentArray, aaveDaiRate })
+    this.setState({ protCoveredFundsObj, totalCoveredFunds, protAnnualPaymentArray, aaveDaiRate })
   }
 
   async _updateBalance() {
@@ -404,17 +411,40 @@ export class Dapp extends React.Component {
     this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds, earningsPerMonth });
   }
 
-  async _stakeFunds(amount) {
-
+  async _approveStakeFunds() {
     try {
+      console.log(`_approveStakeFunds runs`)
       // clear old errors
       this._dismissTransactionError();
 
-      console.log(`presigning in _stakeFunds`)
+      const tx = await this._aaveDai.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+      this.setState({ txBeingSent: tx.hash });
 
-      await this._aaveDai.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      } else {
+        return "success"
+      }
 
-      console.log(`postSigning in _stakeFunds`)
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return "error";
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+      return "error";
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+
+  async _stakeFunds(amount) {
+    console.log(`_stakeFunds runs`)
+    try {
+      // clear old errors
+      this._dismissTransactionError();
 
       const tx = await this._insurance.stakeFunds(parseEther(amount));
       this.setState({ txBeingSent: tx.hash });
@@ -422,21 +452,23 @@ export class Dapp extends React.Component {
       const receipt = await tx.wait();
       if (receipt.status === 0) {
         throw new Error("Transaction failed");
+      } else {
+        await this._updateBalance();
+        return "success"
       }
-
-      await this._updateBalance();
 
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
+        return "error";
       }
 
       // Other errors are logged and stored in the Dapp's state. This is used to
       // show them to the user, and for debugging.
       console.error(error);
       this.setState({ transactionError: error });
+      return "error";
     } finally {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
@@ -444,12 +476,40 @@ export class Dapp extends React.Component {
     }
   }
 
-  async _withdrawStake() {
+  async _approveWithdrawStake() {
     try {
+      console.log(`_approveWithdrawStake runs`)
       // clear old errors
       this._dismissTransactionError();
 
-      await this._stakeToken.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+      const tx = await this._stakeToken.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      } else {
+        return "success"
+      }
+
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return "error";
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+      return "error";
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  async _withdrawStake() {
+    try {
+      console.log(`_withdrawStake runs`)
+      // clear old errors
+      this._dismissTransactionError();
+
       const amount = await this._stakeToken.balanceOf(this.state.selectedAddress);
 
       const tx = await this._insurance.withdrawStake(amount);
@@ -458,17 +518,19 @@ export class Dapp extends React.Component {
       const receipt = await tx.wait();
       if (receipt.status === 0) {
         throw new Error("Transaction failed");
+      } else {
+        await this._getUnlockData();
+        await this._updateBalance();
+        return "success";
       }
-
-      await this._getUnlockData();
-      await this._updateBalance();
 
     } catch (error) {
       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
+        return "error";
       }
       console.error(error);
       this.setState({ transactionError: error });
+      return "error"
     } finally {
       this.setState({ txBeingSent: undefined });
     }
@@ -485,17 +547,19 @@ export class Dapp extends React.Component {
       const receipt = await tx.wait();
       if (receipt.status === 0) {
         throw new Error("Transaction failed");
+      } else {
+        await this._getUnlockData();
+        await this._updateBalance();
+        return "success"
       }
-
-      await this._getUnlockData();
-      await this._updateBalance();
 
     } catch (error) {
       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
+        return "error";
       }
       console.error(error);
       this.setState({ transactionError: error });
+      return "error"
     } finally {
       this.setState({ txBeingSent: undefined });
     }
@@ -512,17 +576,19 @@ export class Dapp extends React.Component {
       const receipt = await tx.wait();
       if (receipt.status === 0) {
         throw new Error("Transaction failed");
+      } else {
+        await this._getUnlockData();
+        await this._updateBalance();
+        return "success";
       }
-
-      await this._getUnlockData();
-      await this._updateBalance();
 
     } catch (error) {
       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
+        return "error";
       }
       console.error(error);
       this.setState({ transactionError: error });
+      return "error";
     } finally {
       this.setState({ txBeingSent: undefined });
     }
