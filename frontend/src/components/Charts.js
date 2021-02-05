@@ -79,10 +79,10 @@ export default class Charts extends PureComponent {
 
     return (
     <>
-      <h2 style={{ marginLeft: '14%', float: 'left', fontSize: '2vw' }}>Covered Protocols</h2>
-      <h2 style={{ marginRight: '18%', float: 'right', fontSize: '2vw' }}>Pool Strategies</h2>
+      <h2 style={{ marginLeft: '14.5%', float: 'left', fontSize: '2vw' }}>Covered Protocols</h2>
+      <h2 style={{ marginRight: '18.5%', float: 'right', fontSize: '2vw' }}>Pool Strategies</h2>
       <ResponsiveContainer width='99%' aspect={2.2}>
-        <PieChart style={{ marginBottom: "35px" }}>
+        <PieChart style={{ marginBottom: "10px" }}>
           <Pie
             data={this.protocolData}
             cx="25%"
