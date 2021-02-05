@@ -7,18 +7,38 @@ import 'antd/lib/style/themes/default.less';
 
 export function TwoCards({
   stakeFunds,
+  withdrawStake,
+  cancelWithdraw,
+  claimFunds,
   userStake,
   earningsPerMonth,
   totalStakedFunds,
   totalAPY,
+  timeLock,
+  timeLeftForUnlock,
+  fundsForUnlock
 })
 {
+  // console.log(`timeLeftForUnlock in TwoCards is ${timeLeftForUnlock}`)
 
   const { Option } = Select;
+  const initialUnlockState = () => {
+    if (timeLeftForUnlock > 0) {
+      // 1 means it is during the waiting period
+      return "1"
+      // needs to be less than zero, otherwise will get called when it shouldn't
+    } else if (timeLeftForUnlock < 0) {
+      // 2 means funds are available to be withdrawn
+      return "2"
+    } else {
+      // 0 means withdraw period has not begun
+      return "0"
+    }
+  }
 
   const [stakeAmount, setStakeAmount] = useState(0);
   const [stakeToken, setStakeToken] = useState("DAI");
-  const [unlockStarted, setUnlockStarted] = useState(false);
+  const [unlockState, setUnlockState] = useState(initialUnlockState);
 
   function handleNumberChange(value) {
     setStakeAmount(value);
@@ -37,12 +57,16 @@ export function TwoCards({
   };
 
   const startUnlockProcess = () => {
-    setUnlockStarted(true);
+    withdrawStake().then(setUnlockState("1"))
   };
 
   const cancelUnlockProcess = () => {
-    setUnlockStarted(false);
+    cancelWithdraw().then(setUnlockState("0"))
   };
+
+  const claimFundsProcess = () => {
+    claimFunds().then(setUnlockState("0"))
+  }
 
   function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -72,7 +96,7 @@ export function TwoCards({
             <p style={{textAlign:'left', margin:40}}>
               <b>Lockup</b>
               <span style={{float:'right'}}>
-                3 days
+                {timeLock} days
               </span>
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 25}}>
@@ -133,7 +157,7 @@ export function TwoCards({
               </span>
             </h5>
             <div style={{ display: 'flex', justifyContent: 'center'}}>
-              {!unlockStarted&&
+              { unlockState==="0" &&
                 <Button
                   type="primary"
                   style={{
@@ -148,11 +172,11 @@ export function TwoCards({
                   Start Unlock
                 </Button>
               }
-              {unlockStarted&&
+              { unlockState==="1" &&
                 <>
                   <Space direction="vertical">
                     <p style={{ display: 'flex', justifyContent: 'center', }}>
-                      72 hours remaining
+                      {timeLeftForUnlock ? `${timeLeftForUnlock} hours` : "Calculating time"} remaining
                     </p>
                     <Button
                       type="danger"
@@ -163,6 +187,21 @@ export function TwoCards({
                     </Button>
                   </Space>
                 </>
+              }
+              { unlockState==="2" &&
+                <Button
+                  type="primary"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    backgroundColor: '#99CCFF',
+                    borderColor: '#99CCFF',
+                    color: 'black'
+                  }}
+                  onClick={claimFundsProcess}
+                >
+                  Claim Funds
+                </Button>
               }
 
             </div>

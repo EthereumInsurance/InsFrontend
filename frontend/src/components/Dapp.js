@@ -6,6 +6,7 @@ import STRATEGY_MANAGER_ARTIFACT from "../ABIs/StrategyManagerABI.json";
 import AAVE_LENDING_POOL_PROVIDER_ABI from "../ABIs/LendingPoolProviderABI.json";
 import AAVE_LENDING_POOL_ABI from "../ABIs/LendingPoolABI.json";
 import AAVE_DAI_ABI from "../ABIs/AaveDaiABI.json";
+import STAKE_TOKEN_ABI from "../ABIs/StakeTokenABI.json";
 
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
@@ -15,7 +16,6 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { TwoCards } from "./TwoCards";
 import { FAQ } from "./FAQ";
 import Charts from "./Charts";
-
 import { Menu } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
@@ -32,6 +32,7 @@ const STRATEGY_MANAGER_ADDRESS = "0x93540d68b2447F924E51caE24c3EAa3AB5516e32";
 const AAVE_LENDING_POOL_ADDRESS = "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c";
 const AAVE_LENDING_POOL_PROVIDER_ADDRESS = "0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5";
 const AAVE_DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
+const STAKE_TOKEN_ADDRESS = "0x2610C11aB6f7DCa1d8915f328c6995E0c16f5d94";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -43,6 +44,7 @@ export class Dapp extends React.Component {
     this.initialState = {
       // The user's address and balance
       selectedAddress: undefined,
+      timeLock: undefined,
       userStake: undefined,
       totalStakedFunds: undefined,
       earningsPerMonth: undefined,
@@ -58,6 +60,8 @@ export class Dapp extends React.Component {
       networkError: undefined,
       insuranceData: undefined,
       menuTab: "1",
+      timeLeftForUnlock: undefined,
+      fundsForUnlock: undefined,
     };
 
     this.state = this.initialState;
@@ -87,8 +91,12 @@ export class Dapp extends React.Component {
       );
     }
 
+    // console.log(`timeLock is ${this.state.timeLock}`)
+    // console.log(`protCoveredFunds is ${this.state.protCoveredFunds}`)
+    // console.log(`totalAPY is ${this.state.totalAPY}`)
+
     // If the user's data hasn't loaded yet, we show a loading component.
-    if (!this.state.insuranceData || !this.state.earningsPerMonth || !this.state.protCoveredFunds || !this.state.totalAPY) {
+    if (!this.state.timeLock || !this.state.protCoveredFunds || !this.state.totalAPY) {
       return <Loading />;
     }
 
@@ -135,10 +143,22 @@ export class Dapp extends React.Component {
               stakeFunds={(amount) =>
                 this._stakeFunds(amount)
               }
+              withdrawStake={() =>
+                this._withdrawStake()
+              }
+              cancelWithdraw={() =>
+                this._cancelWithdraw()
+              }
+              claimFunds={() =>
+                this._claimFunds()
+              }
               userStake={this.state.userStake}
               earningsPerMonth={this.state.earningsPerMonth}
               totalStakedFunds={this.state.totalStakedFunds}
               totalAPY={this.state.totalAPY}
+              timeLock = {this.state.timeLock}
+              timeLeftForUnlock = {this.state.timeLeftForUnlock}
+              fundsForUnlock = {this.state.fundsForUnlock}
             />
           </>
         )}
@@ -171,7 +191,6 @@ export class Dapp extends React.Component {
   }
 
   async _connectWallet() {
-    console.log(`connectWallet runs`)
     // This method is run when the user clicks the Connect. It connects the
     // dapp to the user's wallet, and initializes it.
 
@@ -225,15 +244,13 @@ export class Dapp extends React.Component {
     // sample project, but you can reuse the same initialization pattern.
     this._initializeEthers();
     this._startPollingData();
-    this._getInsuranceData();
+    this._getUnlockData();
     this._getProtocolInfo();
   }
 
   async _initializeEthers() {
-    console.log(`initializeEthers runs`)
     // We first initialize ethers by creating a provider using window.ethereum
     this._provider = new ethers.providers.Web3Provider(window.ethereum);
-    console.log(`provider has been set in _initializeEthers and is ${JSON.stringify(this._provider)}`)
 
     // When, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
@@ -266,6 +283,12 @@ export class Dapp extends React.Component {
       AAVE_DAI_ABI,
       this._provider.getSigner(0)
     );
+
+    this._stakeToken = new ethers.Contract(
+      STAKE_TOKEN_ADDRESS,
+      STAKE_TOKEN_ABI,
+      this._provider.getSigner(0)
+    );
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -289,27 +312,45 @@ export class Dapp extends React.Component {
 
   // The next two methods just read from the contract and store the results
   // in the component state.
-  async _getInsuranceData() {
-    const timeLock = await this._insurance.timeLock();
-    console.log(`timeLock is ${timeLock}`)
+  async _getUnlockData() {
+    const rawTimeLock = await this._insurance.timeLock();
+    // translating from blocks to days
+    const timeLock = Math.round(rawTimeLock / 24 / 60 / 4)
 
-    this.setState({ insuranceData: { timeLock } });
+    var timeLeftForUnlock = undefined;
+    var fundsForUnlock = undefined;
+    const stakesWithdraw = await this._insurance.stakesWithdraw(this.state.selectedAddress);
+    console.log(`stakesWithdraw is ${stakesWithdraw}`)
+    if ( stakesWithdraw ) {
+      // handle unlock stuff
+      const withdrawStartBlock = stakesWithdraw[0];
+      const currentBlock = await this._provider.getBlockNumber();
+      if ((withdrawStartBlock + rawTimeLock) <= currentBlock) {
+        timeLeftForUnlock = 0;
+        fundsForUnlock = await this._insurance.stakesWithdraw(this.state.selectedAddress).stake;
+      } else {
+        console.log(`we get into the else part`)
+        console.log(`currentBlock is ${currentBlock}`)
+        console.log(`withdrawStartBlock is ${withdrawStartBlock}`)
+        console.log(`rawTimeLock is ${rawTimeLock}`)
+        timeLeftForUnlock = Math.round((((withdrawStartBlock*1) + (rawTimeLock*1)) - (currentBlock*1)) / 60 / 4);
+      }
+    }
+    console.log(`timeLeftForUnlock is ${timeLeftForUnlock}`)
+    this.setState({ timeLock, timeLeftForUnlock, fundsForUnlock });
   }
 
   async _getProtocolInfo() {
-    console.log(`getProtocolInfo runs`)
 
     // getting APY for Dai Aave staking
     const rawDaiAaveData = await this._aaveLendingPool.getReserveData(AAVE_DAI_ADDRESS);
     const aaveDaiRate = this._fromRaytoPercent(rawDaiAaveData.liquidityRate);
-    console.log(`aaveDaiRate is ${aaveDaiRate.toFixed(4)}`);
 
 
     // need a proper getter in Insurance contract for protocols
     // protocol info shouldn't change after initiation so putting it in _getProtocolInfo
     const numOfProtocols = await this._insurance.amountOfProtocolsCovered();
     // const numOfProtocols = 3;
-    console.log(`numOfProtocols from contract is ${numOfProtocols}`)
     var protAddresses = [];
     var protCoveredFunds = [];
     var protAnnualPaymentArray = [];
@@ -334,8 +375,13 @@ export class Dapp extends React.Component {
   }
 
   async _updateBalance() {
-    const userStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
     const totalStakedFunds = parseFloat(formatEther(await this._insurance.getTotalStakedFunds()));
+    const totalStakeTokenSupply = parseFloat(formatEther(await this._stakeToken.totalSupply()));
+    const getFundsUserStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
+    const rawStakesWithdrawUserStake = parseFloat(formatEther((await this._insurance.stakesWithdraw(this.state.selectedAddress))[1]));
+    const stakesWithdrawUserStake = rawStakesWithdrawUserStake * totalStakedFunds / totalStakeTokenSupply;
+    const userStake = getFundsUserStake + stakesWithdrawUserStake;
+
 
     // getting amount of funds in Dai Aave strategy
     const daiAaveStrategyFunds = this._weiToNormal(await this._strategyManager.balanceOf(AAVE_DAI_ADDRESS));
@@ -347,13 +393,13 @@ export class Dapp extends React.Component {
       const protAPY = totalProtAnnualPayment / totalStakedFunds;
       const aaveDaiAPY = this.state.aaveDaiRate;
       totalAPY = protAPY + aaveDaiAPY;
-
     }
+    // console.log(`totalAPY is ${totalAPY}`)
 
     // Calculating earningsPerMonth
     const earningsPerMonth = userStake * totalAPY / 12
-    console.log(`userStake is ${userStake}`)
-    console.log(`earningsPerMonth is ${earningsPerMonth}`)
+    // console.log(`userStake is ${userStake}`)
+    // console.log(`earningsPerMonth is ${earningsPerMonth}`)
 
     this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds, earningsPerMonth });
   }
@@ -364,9 +410,11 @@ export class Dapp extends React.Component {
       // clear old errors
       this._dismissTransactionError();
 
-      const totalSupply = await this._aaveDai.totalSupply();
-      console.log(`totalSupply of Aave Dai is ${totalSupply}`)
+      console.log(`presigning in _stakeFunds`)
+
       await this._aaveDai.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+
+      console.log(`postSigning in _stakeFunds`)
 
       const tx = await this._insurance.stakeFunds(parseEther(amount));
       this.setState({ txBeingSent: tx.hash });
@@ -392,6 +440,90 @@ export class Dapp extends React.Component {
     } finally {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  async _withdrawStake() {
+    try {
+      // clear old errors
+      this._dismissTransactionError();
+
+      await this._stakeToken.approve(INSURANCE_ADDRESS, constants.MaxUint256);
+      const amount = await this._stakeToken.balanceOf(this.state.selectedAddress);
+
+      const tx = await this._insurance.withdrawStake(amount);
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+
+      await this._getUnlockData();
+      await this._updateBalance();
+
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  async _cancelWithdraw() {
+    try {
+      // clear old errors
+      this._dismissTransactionError();
+
+      const tx = await this._insurance.cancelWithdraw();
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+
+      await this._getUnlockData();
+      await this._updateBalance();
+
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  async _claimFunds() {
+    try {
+      // clear old errors
+      this._dismissTransactionError();
+
+      const tx = await this._insurance.claimFunds(this.state.selectedAddress);
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+
+      await this._getUnlockData();
+      await this._updateBalance();
+
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
       this.setState({ txBeingSent: undefined });
     }
   }
@@ -448,4 +580,5 @@ export class Dapp extends React.Component {
   _weiToNormal(num) {
     return num / (Math.pow(10, 18))
   }
+
 }
