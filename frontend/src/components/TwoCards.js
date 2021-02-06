@@ -97,7 +97,7 @@ export function TwoCards({
     <div>
         <Row>
           <Card
-            className="card"
+            className="leftCard"
             style={{ backgroundColor: '#f8f8ff' }}
             bordered={true}
           >
@@ -147,7 +147,7 @@ export function TwoCards({
 
 
           <Card
-            className="card"
+            className="rightCard"
             style={{ backgroundColor: '#f8f8ff' }}
             bordered={true}
           >

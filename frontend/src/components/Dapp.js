@@ -16,7 +16,7 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { TwoCards } from "./TwoCards";
 import { FAQ } from "./FAQ";
 import Charts from "./Charts";
-import { Menu } from "antd";
+import { Menu, Radio } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -114,18 +114,17 @@ export class Dapp extends React.Component {
             </h4>
           </div>
         </div>
-        <Menu
-          style={{textAlign:"center", marginBottom: '25px'}}
-          onClick={this._setMenuTab}
-          selectedKeys={this.state.menuTab}
-          mode="horizontal">
-          <Menu.Item key="1" >
-            Dashboard
-          </Menu.Item>
-          <Menu.Item key="2" >
-            Allocations
-          </Menu.Item>
-        </Menu>
+
+        <div style={{textAlign: "center"}}>
+          <Radio.Group
+            onChange={this._setMenuTab}
+            value={this.state.menuTab}
+            style={{ marginBottom: '25px'}}
+          >
+            <Radio.Button value="1">Dashboard</Radio.Button>
+            <Radio.Button value="2">Allocations</Radio.Button>
+          </Radio.Group>
+        </div>
 
         {this.state.txBeingSent && (
           <WaitingForTransactionMessage txHash={this.state.txBeingSent} />
@@ -635,8 +634,8 @@ export class Dapp extends React.Component {
   }
 
   _setMenuTab = (event) => {
-    console.log(`set to ${event.key}`)
-    this.setState({ menuTab: event.key });
+    console.log(`set to ${event.target.value}`)
+    this.setState({ menuTab: event.target.value });
 
   }
 
