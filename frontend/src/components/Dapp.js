@@ -351,7 +351,10 @@ export class Dapp extends React.Component {
     // getting APY for Dai Aave staking
     const rawDaiAaveData = await this._aaveLendingPool.getReserveData(AAVE_DAI_ADDRESS);
     const aaveDaiRate = this._fromRaytoPercent(rawDaiAaveData.liquidityRate);
+    console.log(`Aave Dai liquidityRate is ${aaveDaiRate}`)
 
+    const lastUpdated = rawDaiAaveData.lastUpdateTimestamp;
+    console.log(`lastUpdated for LendingPool is ${lastUpdated}`)
 
     // need a proper getter in Insurance contract for protocols
     // protocol info shouldn't change after initiation so putting it in _getProtocolInfo
