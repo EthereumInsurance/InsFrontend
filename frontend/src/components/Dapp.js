@@ -16,7 +16,7 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { TwoCards } from "./TwoCards";
 import { FAQ } from "./FAQ";
 import Charts from "./Charts";
-import { Menu, Radio } from "antd";
+import { Radio } from "antd";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
