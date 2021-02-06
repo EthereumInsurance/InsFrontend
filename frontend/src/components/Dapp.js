@@ -636,7 +636,6 @@ export class Dapp extends React.Component {
   _setMenuTab = (event) => {
     console.log(`set to ${event.target.value}`)
     this.setState({ menuTab: event.target.value });
-
   }
 
   _fromRaytoPercent(num) {

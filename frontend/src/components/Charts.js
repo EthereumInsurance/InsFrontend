@@ -38,14 +38,21 @@ const renderCustomizedLabel = ({
     <>
       <foreignObject x={adjOutsideX} y={adjOutsideY} width={500} height={500}>
         <div display="flex" alignitems="center" flexdirection="row">
-          <div xmlns="http://www.w3.org/1999/xhtml">
+          <div xmlns="http://www.w3.org/1999/xhtml" style={{fontSize:"1.25vw"}}>
             <img xmlns="http://www.w3.org/1999/xhtml" src={images[name]} width="22px" height="22px" alt="logo" />
             {` ${name}`}
           </div>
         </div>
       </foreignObject>
 
-      <text x={insideX} y={insideY} fill="black" textAnchor={insideX > cx ? 'start' : 'end'} dominantBaseline="central">
+      <text
+        x={insideX}
+        y={insideY}
+        fill="black"
+        textAnchor={insideX > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        fontSize="1.25vw"
+      >
         {`$${value}M`}
       </text>
     </>
