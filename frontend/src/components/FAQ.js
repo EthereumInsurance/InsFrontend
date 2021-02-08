@@ -57,7 +57,7 @@ export function FAQ() {
 
   const jTwit = "https://twitter.com/jack__sanford";
   const eTwit = "https://twitter.com/Evert0x";
-  const mMLink = "https://marketmake.ethglobal.co/";
+  const mMLink = "https://hack.ethglobal.co/showcase/audits-r-dead-%E2%98%A0%EF%B8%8F-recOGX63mU1zXmaEI";
 
   return (
     <>
@@ -86,7 +86,7 @@ export function FAQ() {
         </Panel>
       </Collapse>
       <p style={{textAlign:'center', fontSize: 12, marginTop: 100 }}>
-        Created by <a href={jTwit}>Jack</a> and <a href={eTwit}>Evert</a> for the <a href={mMLink}>ETHGlobal MarketMake</a> hackathon.
+        Created by <a href={jTwit} target="_blank" rel="noopener noreferrer">Jack</a> and <a href={eTwit} target="_blank" rel="noopener noreferrer">Evert</a> for the <a href={mMLink} target="_blank" rel="noopener noreferrer">ETHGlobal MarketMake</a> hackathon.
       </p>
       <p style={{textAlign:'center', fontSize: 12, marginTop: -10}}>
         Reach us at auditsrdead@gmail.com.
