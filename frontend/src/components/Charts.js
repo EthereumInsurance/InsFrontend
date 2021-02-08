@@ -9,7 +9,7 @@ const images = {
     Aave: "/AaveLogo.png",
     Compound: "/CompoundLogo.png",
     Maker: "/MakerLogo.jpg",
-    PieDao: "/PieDaoLogo.png",
+    PieDAO: "/PieDAOLogo.png",
     'Aave V2': "/AaveLogo.png",
     'Aave Gov': "/AaveLogo.png",
     Yearn: "/YearnLogo.png",
@@ -65,12 +65,12 @@ export default class Charts extends PureComponent {
 
     const yearnCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.yearn")];
     const makerCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.maker")];
-    const pieDaoCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.piedao")];
+    const pieDAOCoveredFunds = this.props.protCoveredFundsObj[utils.hashMessage("protocol.piedao")];
 
     this.protocolData = [
       { name: 'Yearn', value: yearnCoveredFunds/1000000 },
       { name: 'Maker', value: makerCoveredFunds/1000000 },
-      { name: 'PieDao', value: pieDaoCoveredFunds/1000000 },
+      { name: 'PieDAO', value: pieDAOCoveredFunds/1000000 },
     ];
 
     this.poolData = [
