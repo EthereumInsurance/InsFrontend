@@ -1,3 +1,9 @@
+Updated cloning:
+1. Clone project
+2. cd frontend
+3. npm install
+4. npm start
+
 Important things:
 1. Compile the backend contracts (TestContracts or EthInsurance) before launching the frontend
 2. In InsFrontend/scripts/deploy.js, change YOUR_ADDRESS to the address you want to test with (your favorite MetaMask account address)
