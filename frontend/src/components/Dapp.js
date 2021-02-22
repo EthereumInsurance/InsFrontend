@@ -92,12 +92,12 @@ export class Dapp extends React.Component {
       );
     }
 
-    // console.log(`timeLock is ${this.state.timeLock}`)
-    // console.log(`protCoveredFundsObj is ${this.state.protCoveredFundsObj}`)
-    // console.log(`totalAPY is ${this.state.totalAPY}`)
+    console.log(`timeLock is ${this.state.timeLock}`)
+    console.log(`protCoveredFundsObj is ${this.state.protCoveredFundsObj}`)
+    console.log(`totalAPY is ${this.state.totalAPY}`)
 
     // If the user's data hasn't loaded yet, we show a loading component.
-    if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
+    if (this.state.timeLock === undefined || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
       return <Loading />;
     }
 
@@ -320,8 +320,10 @@ export class Dapp extends React.Component {
   // in the component state.
   async _getUnlockData() {
     const rawTimeLock = await this._insurance.timeLock();
+    console.log(`initial rawTimeLock is ${rawTimeLock}`)
     // translating from blocks to days
     const timeLock = Math.round(rawTimeLock / 24 / 60 / 11)
+    console.log(`timeLock is ${timeLock}`)
 
     var timeLeftForUnlock = undefined;
     var fundsForUnlock = undefined;
@@ -331,6 +333,8 @@ export class Dapp extends React.Component {
       // handle unlock stuff
       const withdrawStartBlock = stakesWithdraw[0];
       const currentBlock = await this._provider.getBlockNumber();
+      console.log(`withdrawStartBlock is ${withdrawStartBlock}`)
+      console.log(`currentBlock is ${currentBlock}`)
       if ((withdrawStartBlock + rawTimeLock) <= currentBlock) {
         timeLeftForUnlock = 0;
         fundsForUnlock = await this._insurance.stakesWithdraw(this.state.selectedAddress).stake;
@@ -514,6 +518,10 @@ export class Dapp extends React.Component {
       this._dismissTransactionError();
 
       const amount = await this._stakeToken.balanceOf(this.state.selectedAddress);
+      console.log(`amount of stakeToken for this address in _withdrawStake is ${amount}`)
+
+      const getFundsUserStake = parseFloat(formatEther(await this._insurance.getFunds(this.state.selectedAddress)));
+      console.log(`amount of userstake for this address in _withdrawStake is ${getFundsUserStake}`)
 
       const tx = await this._insurance.withdrawStake(amount);
       this.setState({ txBeingSent: tx.hash });
@@ -540,6 +548,10 @@ export class Dapp extends React.Component {
   }
 
   async _cancelWithdraw() {
+    // if (this.state.timeLeftForUnlock === 0) {
+    //   console.error("The unlock period has already expired")
+    //   return
+    // }
     try {
       // clear old errors
       this._dismissTransactionError();
